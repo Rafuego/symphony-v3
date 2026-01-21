@@ -37,6 +37,13 @@ export async function PATCH(request, { params }) {
     if (body.extensionRequested !== undefined) updates.extension_requested = body.extensionRequested
     if (body.extensionNote !== undefined) updates.extension_note = body.extensionNote
     
+    // Editable fields
+    if (body.title !== undefined) updates.title = body.title
+    if (body.description !== undefined) updates.description = body.description
+    if (body.requestType !== undefined) updates.request_type = body.requestType
+    if (body.links !== undefined) updates.links = body.links
+    if (body.attachments !== undefined) updates.attachments = body.attachments
+    
     const { data: updatedRequest, error } = await supabase
       .from('requests')
       .update(updates)
