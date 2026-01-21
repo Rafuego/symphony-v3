@@ -18,6 +18,7 @@ export default function RequestCard({
   const [notes, setNotes] = useState(request.admin_notes || '')
   const [showExtension, setShowExtension] = useState(false)
   const [extensionNote, setExtensionNote] = useState('')
+  const [extensionHours, setExtensionHours] = useState(24)
   const [now, setNow] = useState(new Date())
   
   // Edit mode state
@@ -54,20 +55,23 @@ export default function RequestCard({
   const isFirstInQueue = queuePosition === 1
   const isLastInQueue = queuePosition === totalQueued
 
-  // Calculate 48hr timer
+  // Calculate 48hr timer (plus any extensions)
   const getTimeRemaining = () => {
     if (!request.started_at) return null
     
     const started = new Date(request.started_at)
-    const deadline = new Date(started.getTime() + 48 * 60 * 60 * 1000)
+    const baseHours = 48
+    const extendedHours = request.extension_hours || 0
+    const totalHours = baseHours + extendedHours
+    const deadline = new Date(started.getTime() + totalHours * 60 * 60 * 1000)
     const remaining = deadline - now
     
-    if (remaining <= 0) return { expired: true, hours: 0, minutes: 0, percentRemaining: 0 }
+    if (remaining <= 0) return { expired: true, hours: 0, minutes: 0, percentRemaining: 0, totalHours }
     
     const hours = Math.floor(remaining / (1000 * 60 * 60))
     const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60))
     
-    return { expired: false, hours, minutes, percentRemaining: (remaining / (48 * 60 * 60 * 1000)) * 100 }
+    return { expired: false, hours, minutes, percentRemaining: (remaining / (totalHours * 60 * 60 * 1000)) * 100, totalHours }
   }
 
   const timeRemaining = getTimeRemaining()
@@ -134,10 +138,15 @@ export default function RequestCard({
       await fetch(`/api/requests/${request.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ extensionRequested: true, extensionNote })
+        body: JSON.stringify({ 
+          extensionRequested: true, 
+          extensionNote,
+          extensionHours: (request.extension_hours || 0) + extensionHours
+        })
       })
       setShowExtension(false)
       setExtensionNote('')
+      setExtensionHours(24)
       onRefresh()
     } catch (err) {
       alert('Error requesting extension: ' + err.message)
@@ -526,24 +535,27 @@ export default function RequestCard({
                   ? 'Deadline Passed' 
                   : `${timeRemaining.hours}h ${timeRemaining.minutes}m remaining`}
               </span>
+              {request.extension_hours > 0 && (
+                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                  +{request.extension_hours}h extended
+                </span>
+              )}
             </div>
-            {!request.extension_requested && (
-              <button
-                onClick={() => setShowExtension(true)}
-                className="px-3 py-1 text-xs border border-gray-300 rounded text-gray-600 hover:bg-white"
-              >
-                {isAdmin ? 'Add Extension' : 'Request Extension'}
-              </button>
-            )}
+            <button
+              onClick={() => setShowExtension(true)}
+              className="px-3 py-1 text-xs border border-gray-300 rounded text-gray-600 hover:bg-white"
+            >
+              {request.extension_hours > 0 ? 'Add More Time' : (isAdmin ? 'Add Extension' : 'Request Extension')}
+            </button>
           </div>
           <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
             <div 
               className={`h-full rounded-full ${timeRemaining.percentRemaining < 25 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-              style={{ width: `${timeRemaining.percentRemaining}%` }}
+              style={{ width: `${Math.min(timeRemaining.percentRemaining, 100)}%` }}
             />
           </div>
           {request.extension_note && (
-            <p className="text-xs text-gray-600 mt-2 italic">Note: {request.extension_note}</p>
+            <p className="text-xs text-gray-600 mt-2 italic">Extension note: {request.extension_note}</p>
           )}
         </div>
       )}
@@ -552,19 +564,48 @@ export default function RequestCard({
       {showExtension && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
-            <h3 className="font-serif text-xl mb-4">{isAdmin ? 'Add Extension Note' : 'Request Extension'}</h3>
-            <textarea
-              value={extensionNote}
-              onChange={(e) => setExtensionNote(e.target.value)}
-              placeholder="Reason for extension..."
-              rows={3}
-              className="input mb-4"
-            />
+            <h3 className="font-serif text-xl mb-4">{isAdmin ? 'Add Extension' : 'Request Extension'}</h3>
+            
+            <div className="mb-4">
+              <label className="label">Extension Time</label>
+              <div className="flex gap-2 items-center">
+                <select
+                  value={extensionHours}
+                  onChange={(e) => setExtensionHours(parseInt(e.target.value))}
+                  className="input flex-1"
+                >
+                  <option value={6}>6 hours</option>
+                  <option value={12}>12 hours</option>
+                  <option value={24}>24 hours (1 day)</option>
+                  <option value={48}>48 hours (2 days)</option>
+                  <option value={72}>72 hours (3 days)</option>
+                  <option value={96}>96 hours (4 days)</option>
+                  <option value={120}>120 hours (5 days)</option>
+                </select>
+              </div>
+              {request.extension_hours > 0 && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Already extended by {request.extension_hours}h — this will add {extensionHours}h more
+                </p>
+              )}
+            </div>
+            
+            <div className="mb-4">
+              <label className="label">Reason for Extension</label>
+              <textarea
+                value={extensionNote}
+                onChange={(e) => setExtensionNote(e.target.value)}
+                placeholder="Explain why more time is needed..."
+                rows={3}
+                className="input"
+              />
+            </div>
+            
             <div className="flex gap-3">
               <button onClick={handleExtensionRequest} className="btn-primary flex-1">
-                {isAdmin ? 'Add Extension' : 'Submit Request'}
+                {isAdmin ? `Add +${extensionHours}h Extension` : `Request +${extensionHours}h`}
               </button>
-              <button onClick={() => setShowExtension(false)} className="btn-secondary">
+              <button onClick={() => { setShowExtension(false); setExtensionHours(24); setExtensionNote(''); }} className="btn-secondary">
                 Cancel
               </button>
             </div>

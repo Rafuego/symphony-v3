@@ -36,6 +36,7 @@ export async function PATCH(request, { params }) {
     if (body.adminNotes !== undefined) updates.admin_notes = body.adminNotes
     if (body.extensionRequested !== undefined) updates.extension_requested = body.extensionRequested
     if (body.extensionNote !== undefined) updates.extension_note = body.extensionNote
+    if (body.extensionHours !== undefined) updates.extension_hours = body.extensionHours
     
     // Editable fields
     if (body.title !== undefined) updates.title = body.title

@@ -1,5 +1,5 @@
 -- Symphony by Interlude - Migration 002
--- Adds request_type, links, and attachments fields to requests table
+-- Adds request_type, links, attachments, and extension_hours fields to requests table
 -- Run this in your Supabase SQL Editor AFTER the initial schema
 
 -- Add request_type column
@@ -14,6 +14,10 @@ ADD COLUMN IF NOT EXISTS links JSONB DEFAULT '[]'::jsonb;
 -- Add attachments column (stores JSON array of uploaded files)
 ALTER TABLE requests 
 ADD COLUMN IF NOT EXISTS attachments JSONB DEFAULT '[]'::jsonb;
+
+-- Add extension_hours column (total hours of extensions added)
+ALTER TABLE requests 
+ADD COLUMN IF NOT EXISTS extension_hours INTEGER DEFAULT 0;
 
 -- Update the index for filtering by type
 CREATE INDEX IF NOT EXISTS idx_requests_type ON requests(request_type);
