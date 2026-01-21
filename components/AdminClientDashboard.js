@@ -18,6 +18,8 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
     attachments: []
   })
   const [uploading, setUploading] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [passwordInput, setPasswordInput] = useState('')
   const [passwordEnabled, setPasswordEnabled] = useState(client.password_enabled)
   const [submitting, setSubmitting] = useState(false)
@@ -196,6 +198,25 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
     alert(`Client link copied!\n\n${url}`)
   }
 
+  const handleDeleteClient = async () => {
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/clients/${client.id}`, {
+        method: 'DELETE'
+      })
+      
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      
+      setShowDeleteModal(false)
+      onBack() // Return to client list
+    } catch (err) {
+      alert('Error deleting client: ' + err.message)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const filteredRequests = getFilteredRequests()
 
   return (
@@ -277,6 +298,22 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
               </label>
               <button onClick={handleSavePassword} className="btn-accent text-sm">
                 Save
+              </button>
+            </div>
+          </div>
+          
+          {/* Danger Zone */}
+          <div className="max-w-6xl mx-auto mt-8 pt-6 border-t border-red-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-semibold text-red-600">Danger Zone</h4>
+                <p className="text-xs text-gray-500 mt-1">Permanently delete this client and all their requests</p>
+              </div>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="px-4 py-2 bg-white border border-red-300 text-red-600 rounded-lg text-sm hover:bg-red-50 transition-colors"
+              >
+                Delete Client
               </button>
             </div>
           </div>
@@ -604,6 +641,48 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
           onSave={handlePlanUpdate}
           onClose={() => setShowPlanModal(false)}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <span className="text-2xl">⚠️</span>
+              </div>
+              <div>
+                <h3 className="font-serif text-xl text-gray-900">Delete Client</h3>
+                <p className="text-sm text-gray-500">This action cannot be undone</p>
+              </div>
+            </div>
+            
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-red-800">
+                Are you sure you want to permanently delete <strong>{client.name}</strong>? 
+                This will also delete all {requests.length} request{requests.length !== 1 ? 's' : ''} 
+                and any associated files.
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteClient}
+                disabled={deleting}
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+              >
+                {deleting ? 'Deleting...' : 'Yes, Delete Client'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
