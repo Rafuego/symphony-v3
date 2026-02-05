@@ -45,15 +45,15 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
 
   return (
     <div className="min-h-screen bg-[#F5F0EB]">
-      {/* Top accent bar */}
+      {/* Admin - Brown accent bar */}
       <div className="h-1.5 bg-[#8B7355]" />
-      
+
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-10 py-5">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
           <div className="flex items-center gap-3">
             <h1 className="font-serif text-2xl font-normal text-gray-900">Symphony</h1>
-            <span className="text-xs text-[#8B7355] font-medium uppercase tracking-wider">
+            <span className="px-3 py-1.5 bg-[#8B7355] text-white text-xs font-semibold uppercase tracking-wider rounded">
               Admin Console
             </span>
           </div>

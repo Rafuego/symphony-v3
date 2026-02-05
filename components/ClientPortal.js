@@ -146,7 +146,8 @@ export default function ClientPortal({ client, onRefresh }) {
 
   return (
     <div className="min-h-screen bg-[#F5F0EB]">
-      <div className="h-1.5 bg-[#8B7355]" />
+      {/* Client Portal - Blue accent bar to distinguish from admin */}
+      <div className="h-1.5 bg-blue-600" />
 
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-10 py-5">
@@ -160,6 +161,9 @@ export default function ClientPortal({ client, onRefresh }) {
               <span className="text-xs text-gray-500">Symphony by Interlude</span>
             </div>
           </div>
+          <span className="px-3 py-1.5 bg-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-wider rounded">
+            Client Portal
+          </span>
         </div>
       </header>
 

@@ -44,6 +44,7 @@ export async function PATCH(request, { params }) {
     if (body.requestType !== undefined) updates.request_type = body.requestType
     if (body.links !== undefined) updates.links = body.links
     if (body.attachments !== undefined) updates.attachments = body.attachments
+    if (body.dueDate !== undefined) updates.due_date = body.dueDate
     
     const { data: updatedRequest, error } = await supabase
       .from('requests')

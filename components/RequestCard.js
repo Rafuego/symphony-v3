@@ -28,7 +28,8 @@ export default function RequestCard({
     description: request.description || '',
     requestType: request.request_type || 'misc',
     links: request.links?.length > 0 ? request.links : [''],
-    attachments: request.attachments || []
+    attachments: request.attachments || [],
+    dueDate: request.due_date ? new Date(request.due_date).toISOString().slice(0, 16) : ''
   })
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -47,7 +48,8 @@ export default function RequestCard({
       description: request.description || '',
       requestType: request.request_type || 'misc',
       links: request.links?.length > 0 ? request.links : [''],
-      attachments: request.attachments || []
+      attachments: request.attachments || [],
+      dueDate: request.due_date ? new Date(request.due_date).toISOString().slice(0, 16) : ''
     })
   }, [request])
 
@@ -55,27 +57,55 @@ export default function RequestCard({
   const isFirstInQueue = queuePosition === 1
   const isLastInQueue = queuePosition === totalQueued
 
-  // Calculate 48hr timer (plus any extensions)
+  // Calculate timer based on due_date (if set) or default 48hr from started_at (plus extensions)
   const getTimeRemaining = () => {
+    // If due_date is set, use that as the deadline
+    if (request.due_date) {
+      const deadline = new Date(request.due_date)
+      const remaining = deadline - now
+
+      // Calculate total duration from started_at (or created_at) to due_date for percentage
+      const startRef = request.started_at ? new Date(request.started_at) : new Date(request.created_at)
+      const totalDuration = deadline - startRef
+
+      if (remaining <= 0) return { expired: true, hours: 0, minutes: 0, percentRemaining: 0, totalHours: Math.ceil(totalDuration / (1000 * 60 * 60)), usingDueDate: true }
+
+      const hours = Math.floor(remaining / (1000 * 60 * 60))
+      const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60))
+
+      return {
+        expired: false,
+        hours,
+        minutes,
+        percentRemaining: (remaining / totalDuration) * 100,
+        totalHours: Math.ceil(totalDuration / (1000 * 60 * 60)),
+        usingDueDate: true,
+        dueDate: deadline
+      }
+    }
+
+    // Fallback to default 48hr timer from started_at
     if (!request.started_at) return null
-    
+
     const started = new Date(request.started_at)
     const baseHours = 48
     const extendedHours = request.extension_hours || 0
     const totalHours = baseHours + extendedHours
     const deadline = new Date(started.getTime() + totalHours * 60 * 60 * 1000)
     const remaining = deadline - now
-    
-    if (remaining <= 0) return { expired: true, hours: 0, minutes: 0, percentRemaining: 0, totalHours }
-    
+
+    if (remaining <= 0) return { expired: true, hours: 0, minutes: 0, percentRemaining: 0, totalHours, usingDueDate: false }
+
     const hours = Math.floor(remaining / (1000 * 60 * 60))
     const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60))
-    
-    return { expired: false, hours, minutes, percentRemaining: (remaining / (totalHours * 60 * 60 * 1000)) * 100, totalHours }
+
+    return { expired: false, hours, minutes, percentRemaining: (remaining / (totalHours * 60 * 60 * 1000)) * 100, totalHours, usingDueDate: false }
   }
 
   const timeRemaining = getTimeRemaining()
-  const showTimer = (request.status === 'in-progress' || request.status === 'in-review') && timeRemaining
+  // Show timer for active requests, or any request with a due_date set (including queued items)
+  const showTimer = ((request.status === 'in-progress' || request.status === 'in-review') && timeRemaining) ||
+                   (request.due_date && request.status !== 'completed' && timeRemaining)
 
   const handleStatusChange = async (newStatus) => {
     try {
@@ -228,11 +258,11 @@ export default function RequestCard({
       alert('Title is required')
       return
     }
-    
+
     setSaving(true)
     try {
       const filteredLinks = editData.links.filter(link => link.trim() !== '')
-      
+
       const res = await fetch(`/api/requests/${request.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -241,13 +271,14 @@ export default function RequestCard({
           description: editData.description,
           requestType: editData.requestType,
           links: filteredLinks,
-          attachments: editData.attachments
+          attachments: editData.attachments,
+          dueDate: editData.dueDate ? new Date(editData.dueDate).toISOString() : null
         })
       })
-      
+
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      
+
       setIsEditing(false)
       onRefresh()
     } catch (err) {
@@ -263,7 +294,8 @@ export default function RequestCard({
       description: request.description || '',
       requestType: request.request_type || 'misc',
       links: request.links?.length > 0 ? request.links : [''],
-      attachments: request.attachments || []
+      attachments: request.attachments || [],
+      dueDate: request.due_date ? new Date(request.due_date).toISOString().slice(0, 16) : ''
     })
     setIsEditing(false)
   }
@@ -327,6 +359,33 @@ export default function RequestCard({
           />
         </div>
         
+        {/* Due Date - Admin only */}
+        {isAdmin && (
+          <div className="mb-4">
+            <label className="label">Due Date (optional)</label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="datetime-local"
+                value={editData.dueDate}
+                onChange={(e) => setEditData({ ...editData, dueDate: e.target.value })}
+                className="input flex-1"
+              />
+              {editData.dueDate && (
+                <button
+                  type="button"
+                  onClick={() => setEditData({ ...editData, dueDate: '' })}
+                  className="px-3 py-2 text-red-500 hover:bg-red-50 rounded text-sm"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Set a specific deadline. If not set, the default 48hr timer will be used.
+            </p>
+          </div>
+        )}
+
         <div className="mb-5">
           <label className="label">Links (Figma, Google Docs, references, etc.)</label>
           {editData.links.map((link, index) => (
@@ -524,32 +583,39 @@ export default function RequestCard({
         </div>
       </div>
 
-      {/* 48hr Timer */}
+      {/* Timer - shows due date if set, otherwise 48hr timer */}
       {showTimer && (
         <div className={`rounded-lg p-3 mb-4 ${timeRemaining.expired ? 'bg-red-50' : 'bg-emerald-50'}`}>
           <div className="flex justify-between items-center mb-2">
             <div className="flex items-center gap-2">
               <span>{timeRemaining.expired ? '⚠️' : '⏱️'}</span>
               <span className={`text-sm font-semibold ${timeRemaining.expired ? 'text-red-600' : 'text-emerald-600'}`}>
-                {timeRemaining.expired 
-                  ? 'Deadline Passed' 
+                {timeRemaining.expired
+                  ? 'Deadline Passed'
                   : `${timeRemaining.hours}h ${timeRemaining.minutes}m remaining`}
               </span>
-              {request.extension_hours > 0 && (
+              {timeRemaining.usingDueDate && timeRemaining.dueDate && (
+                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded">
+                  Due {timeRemaining.dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                </span>
+              )}
+              {!timeRemaining.usingDueDate && request.extension_hours > 0 && (
                 <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded">
                   +{request.extension_hours}h extended
                 </span>
               )}
             </div>
-            <button
-              onClick={() => setShowExtension(true)}
-              className="px-3 py-1 text-xs border border-gray-300 rounded text-gray-600 hover:bg-white"
-            >
-              {request.extension_hours > 0 ? 'Add More Time' : (isAdmin ? 'Add Extension' : 'Request Extension')}
-            </button>
+            {!timeRemaining.usingDueDate && (
+              <button
+                onClick={() => setShowExtension(true)}
+                className="px-3 py-1 text-xs border border-gray-300 rounded text-gray-600 hover:bg-white"
+              >
+                {request.extension_hours > 0 ? 'Add More Time' : (isAdmin ? 'Add Extension' : 'Request Extension')}
+              </button>
+            )}
           </div>
           <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
-            <div 
+            <div
               className={`h-full rounded-full ${timeRemaining.percentRemaining < 25 ? 'bg-amber-500' : 'bg-emerald-500'}`}
               style={{ width: `${Math.min(timeRemaining.percentRemaining, 100)}%` }}
             />
