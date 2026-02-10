@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient, planConfig } from '@/lib/supabase'
+import { sendSlackNotification, formatRequestType } from '@/lib/slack'
 
 // POST /api/requests - Create new request
 export async function POST(request) {
@@ -7,16 +8,16 @@ export async function POST(request) {
     const supabase = createServerSupabaseClient()
     const body = await request.json()
     
-    const { clientId, title, description, requestType, links, attachments, dueDate } = body
+    const { clientId, title, description, requestType, links, attachments } = body
     
     if (!clientId || !title) {
       return NextResponse.json({ error: 'Client ID and title are required' }, { status: 400 })
     }
     
-    // Get client info for capacity check
+    // Get client info for capacity check and notification
     const { data: client } = await supabase
       .from('clients')
-      .select('plan, custom_max_active')
+      .select('id, name, plan, custom_max_active')
       .eq('id', clientId)
       .single()
     
@@ -59,13 +60,37 @@ export async function POST(request) {
         attachments: attachments || [],
         status: initialStatus,
         started_at: startedAt,
-        priority: nextPriority,
-        due_date: dueDate || null
+        priority: nextPriority
       })
       .select()
       .single()
     
     if (error) throw error
+    
+    // Create notification in database
+    const notificationMessage = `${title}${description ? ': ' + description.substring(0, 100) : ''}`
+    await supabase
+      .from('notifications')
+      .insert({
+        type: 'new_request',
+        title: `New request from ${client?.name || 'Client'}`,
+        message: notificationMessage,
+        client_id: clientId,
+        request_id: newRequest.id
+      })
+    
+    // Send Slack notification
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'http://localhost:3000'
+    
+    await sendSlackNotification({
+      title: `New Request from ${client?.name || 'Client'}`,
+      message: notificationMessage,
+      clientName: client?.name || 'Unknown',
+      requestType: formatRequestType(requestType || 'misc'),
+      link: `${baseUrl}/admin`
+    })
     
     return NextResponse.json({ request: newRequest })
   } catch (error) {

@@ -10,13 +10,12 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
   const [showNewRequest, setShowNewRequest] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showPlanModal, setShowPlanModal] = useState(false)
-  const [newRequest, setNewRequest] = useState({
-    title: '',
-    description: '',
+  const [newRequest, setNewRequest] = useState({ 
+    title: '', 
+    description: '', 
     requestType: 'misc',
     links: [''],
-    attachments: [],
-    dueDate: ''
+    attachments: []
   })
   const [uploading, setUploading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -118,12 +117,12 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
 
   const handleSubmitRequest = async () => {
     if (!newRequest.title) return
-
+    
     setSubmitting(true)
     try {
       // Filter out empty links
       const filteredLinks = newRequest.links.filter(link => link.trim() !== '')
-
+      
       const res = await fetch('/api/requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -133,15 +132,14 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
           description: newRequest.description,
           requestType: newRequest.requestType,
           links: filteredLinks,
-          attachments: newRequest.attachments,
-          dueDate: newRequest.dueDate ? new Date(newRequest.dueDate).toISOString() : null
+          attachments: newRequest.attachments
         })
       })
-
+      
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-
-      setNewRequest({ title: '', description: '', requestType: 'misc', links: [''], attachments: [], dueDate: '' })
+      
+      setNewRequest({ title: '', description: '', requestType: 'misc', links: [''], attachments: [] })
       setShowNewRequest(false)
       onRefresh()
     } catch (err) {
@@ -223,7 +221,6 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
 
   return (
     <div className="min-h-screen bg-[#F5F0EB]">
-      {/* Admin - Brown accent bar */}
       <div className="h-1.5 bg-[#8B7355]" />
 
       {/* Header */}
@@ -242,9 +239,6 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
                 symphony.interlude.studio/{client.slug}
               </span>
             </div>
-            <span className="px-3 py-1.5 bg-[#8B7355] text-white text-xs font-semibold uppercase tracking-wider rounded">
-              Admin View
-            </span>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={copyClientLink} className="btn-accent text-sm">
@@ -372,29 +366,6 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
                     rows={4}
                     className="input resize-y"
                   />
-                </div>
-                <div className="mb-4">
-                  <label className="label">Due Date (optional)</label>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="datetime-local"
-                      value={newRequest.dueDate}
-                      onChange={(e) => setNewRequest({ ...newRequest, dueDate: e.target.value })}
-                      className="input flex-1"
-                    />
-                    {newRequest.dueDate && (
-                      <button
-                        type="button"
-                        onClick={() => setNewRequest({ ...newRequest, dueDate: '' })}
-                        className="px-3 py-2 text-red-500 hover:bg-red-50 rounded text-sm"
-                      >
-                        Clear
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Set a specific deadline. If not set, the default 48hr timer will be used.
-                  </p>
                 </div>
                 <div className="mb-5">
                   <label className="label">Links (Figma, Google Docs, references, etc.)</label>

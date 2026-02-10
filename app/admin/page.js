@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import AdminClientList from '@/components/AdminClientList'
 import AdminClientDashboard from '@/components/AdminClientDashboard'
-import AdminPasswordGate from '@/components/AdminPasswordGate'
 
 export default function AdminPage() {
   const [clients, setClients] = useState([])
@@ -11,8 +10,6 @@ export default function AdminPage() {
   const [selectedClient, setSelectedClient] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [checkingAuth, setCheckingAuth] = useState(true)
 
   // Fetch all clients
   const fetchClients = async () => {
@@ -43,20 +40,9 @@ export default function AdminPage() {
     }
   }
 
-  // Check if already authenticated (stored in sessionStorage)
   useEffect(() => {
-    const authStatus = sessionStorage.getItem('adminAuthenticated')
-    if (authStatus === 'true') {
-      setIsAuthenticated(true)
-    }
-    setCheckingAuth(false)
+    fetchClients()
   }, [])
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchClients()
-    }
-  }, [isAuthenticated])
 
   useEffect(() => {
     if (selectedClientId) {
@@ -78,43 +64,6 @@ export default function AdminPage() {
     if (selectedClientId) {
       fetchClient(selectedClientId)
     }
-  }
-
-  const handlePasswordSubmit = async (password) => {
-    try {
-      const res = await fetch('/api/admin/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
-      })
-
-      const data = await res.json()
-
-      if (data.verified) {
-        sessionStorage.setItem('adminAuthenticated', 'true')
-        setIsAuthenticated(true)
-        return true
-      }
-
-      return false
-    } catch (err) {
-      console.error('Error verifying password:', err)
-      return false
-    }
-  }
-
-  // Show loading while checking auth
-  if (checkingAuth) {
-    return (
-      <div className="min-h-screen bg-[#F5F0EB] flex items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
-      </div>
-    )
-  }
-
-  // Show password gate if not authenticated
-  if (!isAuthenticated) {
-    return <AdminPasswordGate onSubmit={handlePasswordSubmit} />
   }
 
   if (loading && !selectedClient && clients.length === 0) {
