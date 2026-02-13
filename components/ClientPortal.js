@@ -272,7 +272,7 @@ export default function ClientPortal({ client, onRefresh }) {
                     }`}>
                       <input
                         type="file"
-                        accept="image/*,.pdf"
+                        accept="*"
                         multiple
                         onChange={handleFileUpload}
                         disabled={uploading}
@@ -288,7 +288,7 @@ export default function ClientPortal({ client, onRefresh }) {
                       )}
                     </label>
                   )}
-                  <p className="text-xs text-gray-400 mt-2">Supported: JPG, PNG, GIF, WebP, PDF (max 10MB each)</p>
+                  <p className="text-xs text-gray-400 mt-2">All file types supported (max 25MB each)</p>
                 </div>
                 <div className="flex gap-3">
                   <button onClick={handleSubmitRequest} disabled={submitting || uploading} className="btn-primary">
