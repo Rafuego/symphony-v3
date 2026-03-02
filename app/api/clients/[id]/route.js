@@ -73,6 +73,11 @@ export async function PATCH(request, { params }) {
       updates.notion_database_id = body.notionDatabaseId || null
     }
 
+    // Handle Notion project page ID (maps this client to a Notion project for the Client relation)
+    if (body.notionProjectId !== undefined) {
+      updates.notion_project_id = body.notionProjectId || null
+    }
+
     // Handle password updates
     if (body.password !== undefined) {
       if (body.password && body.passwordEnabled) {

@@ -18,7 +18,7 @@ export async function POST(request) {
     // Get client info for capacity check and notification
     const { data: client } = await supabase
       .from('clients')
-      .select('id, name, plan, custom_max_active, notion_database_id')
+      .select('id, name, plan, custom_max_active, notion_database_id, notion_project_id')
       .eq('id', clientId)
       .single()
     
@@ -97,6 +97,7 @@ export async function POST(request) {
     if (client?.notion_database_id) {
       const notionResult = await createNotionPage({
         notionDatabaseId: client.notion_database_id,
+        notionProjectId: client.notion_project_id,
         title,
         status: initialStatus,
         requestType: requestType || 'misc',

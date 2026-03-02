@@ -26,6 +26,7 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
 
   // Notion integration state
   const [notionDatabaseId, setNotionDatabaseId] = useState(client.notion_database_id || '')
+  const [notionProjectId, setNotionProjectId] = useState(client.notion_project_id || '')
   const [notionSaving, setNotionSaving] = useState(false)
   const [notionTestResult, setNotionTestResult] = useState(null)
 
@@ -194,7 +195,8 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          notionDatabaseId: notionDatabaseId.trim() || null
+          notionDatabaseId: notionDatabaseId.trim() || null,
+          notionProjectId: notionProjectId.trim() || null
         })
       })
       const data = await res.json()
@@ -424,19 +426,20 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
           {/* Notion Integration */}
           <div className="max-w-6xl mx-auto mt-6 pt-6 border-t border-gray-200">
             <h4 className="text-sm font-semibold text-gray-700 mb-3">Notion Integration</h4>
-            <div className="grid grid-cols-[1fr_auto_auto] gap-3 items-end">
+
+            {/* Tasks Database ID */}
+            <div className="grid grid-cols-[1fr_auto] gap-3 items-end mb-4">
               <div>
-                <label className="label">Notion Database ID</label>
+                <label className="label">Tasks Database ID</label>
                 <input
                   type="text"
                   value={notionDatabaseId}
                   onChange={(e) => { setNotionDatabaseId(e.target.value); setNotionTestResult(null) }}
-                  placeholder="e.g., a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  placeholder="e.g., 24e866d0-7449-8154-a2a2-ca1cd1768b41"
                   className="input"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  Paste the database ID from your Notion URL. Your database should have: Status, Client,
-                  Priority, Hours, Initial Start Date, Initial Due Date, Current Timeline, Completed on.
+                  The Notion Tasks database where new requests will appear. Required properties: Status, Priority, Hours, Initial Start Date, Initial Due Date.
                 </p>
               </div>
               <button
@@ -446,6 +449,35 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
               >
                 Test
               </button>
+            </div>
+            {notionTestResult && (
+              <div className={`mb-4 p-3 rounded-lg text-sm ${
+                notionTestResult.valid
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  : 'bg-red-50 text-red-700 border border-red-200'
+              }`}>
+                {notionTestResult.valid
+                  ? `✓ Connected to "${notionTestResult.databaseTitle}"`
+                  : `Error: ${notionTestResult.error || `Missing properties: ${notionTestResult.missingProperties?.join(', ')}`}`
+                }
+              </div>
+            )}
+
+            {/* Client Project Page ID */}
+            <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
+              <div>
+                <label className="label">Client Project Page ID (Optional)</label>
+                <input
+                  type="text"
+                  value={notionProjectId}
+                  onChange={(e) => setNotionProjectId(e.target.value)}
+                  placeholder="e.g., 24e866d0-7449-818d-bb45-000bf166f22e"
+                  className="input"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Links this client to their project in the Notion Projects database. Open the client's project page in Notion, copy the page ID from the URL. This fills the "Client" relation column.
+                </p>
+              </div>
               <button
                 onClick={handleSaveNotion}
                 disabled={notionSaving}
@@ -454,18 +486,6 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
                 {notionSaving ? 'Saving...' : 'Save'}
               </button>
             </div>
-            {notionTestResult && (
-              <div className={`mt-3 p-3 rounded-lg text-sm ${
-                notionTestResult.valid
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                  : 'bg-red-50 text-red-700 border border-red-200'
-              }`}>
-                {notionTestResult.valid
-                  ? `Connected to "${notionTestResult.databaseTitle}"`
-                  : `Error: ${notionTestResult.error || `Missing properties: ${notionTestResult.missingProperties?.join(', ')}`}`
-                }
-              </div>
-            )}
           </div>
 
           {/* Danger Zone */}

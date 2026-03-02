@@ -20,10 +20,11 @@ export async function POST(request) {
     const notion = new Client({ auth: apiKey })
     const db = await notion.databases.retrieve({ database_id: databaseId })
 
-    // Check that key properties exist (matching existing Notion database schema)
+    // Check that key properties exist (matching actual Notion database schema)
+    // Note: 'Current Timeline' is a formula (read-only), 'Client' is a relation
     const requiredProps = [
-      'Status', 'Client', 'Priority', 'Hours',
-      'Initial Start Date', 'Current Timeline'
+      'Status', 'Priority', 'Hours',
+      'Initial Start Date', 'Initial Due Date'
     ]
     const existingProps = Object.keys(db.properties)
     const missing = requiredProps.filter(p => !existingProps.includes(p))
