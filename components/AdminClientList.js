@@ -247,8 +247,20 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                             </span>
                           )}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {client.activeCount} active • {client.queuedCount} queued
+                        <div className="text-sm text-gray-500 flex items-center gap-2">
+                          <span>{client.activeCount} active • {client.queuedCount} queued</span>
+                          <span className="text-xs">•</span>
+                          {client.notion_database_id ? (
+                            <span className="text-xs text-green-600 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block" />
+                              Notion linked
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-400 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 bg-gray-300 rounded-full inline-block" />
+                              Notion not configured
+                            </span>
+                          )}
                         </div>
                       </div>
                       {clientPrice && (
