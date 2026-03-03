@@ -197,7 +197,13 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
 
             {/* Client List */}
             <div className="space-y-3">
-              {clients.map(client => {
+              {[...clients].sort((a, b) => {
+                const tagOrder = { symphony: 0, '': 1, legacy_drip: 2 }
+                const aOrder = tagOrder[a.client_tag || ''] ?? 1
+                const bOrder = tagOrder[b.client_tag || ''] ?? 1
+                if (aOrder !== bOrder) return aOrder - bOrder
+                return (a.name || '').localeCompare(b.name || '')
+              }).map(client => {
                 const plan = planConfig[client.plan]
                 const clientPrice = client.custom_price || plan?.defaultPrice
                 return (
