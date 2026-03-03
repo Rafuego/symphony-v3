@@ -270,7 +270,7 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Monthly Revenue</div>
-                    <div className="font-serif text-3xl text-gray-900">
+                    <div className="text-2xl font-semibold text-gray-900">
                       ${clients.reduce((total, c) => {
                         const price = c.custom_price || planConfig[c.plan]?.defaultPrice || 0
                         return total + parseInt(price)
@@ -279,7 +279,7 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-gray-500 mb-1">Active Clients</div>
-                    <div className="font-serif text-3xl text-gray-900">{clients.length}</div>
+                    <div className="text-2xl font-semibold text-gray-900">{clients.length}</div>
                   </div>
                 </div>
               </div>
