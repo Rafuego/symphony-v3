@@ -257,15 +257,16 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                         <div className="text-sm text-gray-500 flex items-center gap-2">
                           <span>{client.activeCount} active • {client.queuedCount} queued</span>
                           <span className="text-xs">•</span>
-                          <span className="text-xs text-green-600 flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block" />
-                            Notion linked
-                          </span>
-                          {!client.notion_project_id && (
-                            <>
-                              <span className="text-xs">•</span>
-                              <span className="text-xs text-amber-500">No project ID</span>
-                            </>
+                          {client.notion_project_id ? (
+                            <span className="text-xs text-green-600 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block" />
+                              Notion configured
+                            </span>
+                          ) : (
+                            <span className="text-xs text-amber-500 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 bg-amber-400 rounded-full inline-block" />
+                              No project ID
+                            </span>
                           )}
                         </div>
                       </div>
