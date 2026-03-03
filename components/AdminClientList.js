@@ -90,6 +90,13 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
               Admin Console
             </span>
           </div>
+          <a
+            href="/demo"
+            target="_blank"
+            className="px-4 py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-sm font-medium hover:bg-amber-100 transition-colors"
+          >
+            Demo Environment
+          </a>
         </div>
       </header>
 
