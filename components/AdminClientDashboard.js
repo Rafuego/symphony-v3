@@ -198,7 +198,7 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          notionDatabaseId: notionDatabaseId.trim() || null,
+          notionDatabaseId: notionDatabaseId || '24e866d074498154a2a2ca1cd1768b41',
           notionProjectId: notionProjectId.trim() || null
         })
       })
@@ -457,41 +457,25 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
           <div className="max-w-6xl mx-auto mt-6 pt-6 border-t border-gray-200">
             <h4 className="text-sm font-semibold text-gray-700 mb-3">Notion Integration</h4>
 
-            {/* Tasks Database ID */}
-            <div className="grid grid-cols-[1fr_auto] gap-3 items-end mb-4">
-              <div>
-                <label className="label">Tasks Database ID</label>
+            {/* Tasks Database ID — locked global default */}
+            <div className="mb-4">
+              <label className="label">Tasks Database ID</label>
+              <div className="flex items-center gap-2">
                 <input
                   type="text"
-                  value={notionDatabaseId}
-                  onChange={(e) => { setNotionDatabaseId(e.target.value); setNotionTestResult(null) }}
-                  placeholder="e.g., 24e866d0-7449-8154-a2a2-ca1cd1768b41"
-                  className="input"
+                  value={notionDatabaseId || '24e866d074498154a2a2ca1cd1768b41'}
+                  readOnly
+                  className="input bg-gray-50 text-gray-500 cursor-not-allowed"
                 />
-                <p className="text-xs text-gray-400 mt-1">
-                  The Notion Tasks database where new requests will appear. Required properties: Status, Priority, Hours, Initial Start Date, Initial Due Date.
-                </p>
+                <span className="text-xs text-green-600 whitespace-nowrap flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block" />
+                  Linked
+                </span>
               </div>
-              <button
-                onClick={handleTestNotion}
-                disabled={!notionDatabaseId.trim()}
-                className="px-4 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
-              >
-                Test
-              </button>
+              <p className="text-xs text-gray-400 mt-1">
+                Global Tasks database — shared across all clients. This is locked and set automatically.
+              </p>
             </div>
-            {notionTestResult && (
-              <div className={`mb-4 p-3 rounded-lg text-sm ${
-                notionTestResult.valid
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                  : 'bg-red-50 text-red-700 border border-red-200'
-              }`}>
-                {notionTestResult.valid
-                  ? `✓ Connected to "${notionTestResult.databaseTitle}"`
-                  : `Error: ${notionTestResult.error || `Missing properties: ${notionTestResult.missingProperties?.join(', ')}`}`
-                }
-              </div>
-            )}
 
             {/* Client Project Page ID */}
             <div className="grid grid-cols-[1fr_auto] gap-3 items-end">

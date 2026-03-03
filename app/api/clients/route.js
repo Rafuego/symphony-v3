@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
 import { hashPassword } from '@/lib/password'
 import { v4 as uuidv4 } from 'uuid'
+import { DEFAULT_NOTION_DATABASE_ID } from '@/lib/notion'
 
 // GET /api/clients - Get all clients (admin only)
 export async function GET(request) {
@@ -72,7 +73,8 @@ export async function POST(request) {
         custom_price: customPlan?.price ? parseInt(customPlan.price) : null,
         custom_max_active: customPlan?.maxActive ? parseInt(customPlan.maxActive) : null,
         custom_designers: customPlan?.designers || null,
-        access_token: uuidv4()
+        access_token: uuidv4(),
+        notion_database_id: DEFAULT_NOTION_DATABASE_ID
       })
       .select()
       .single()

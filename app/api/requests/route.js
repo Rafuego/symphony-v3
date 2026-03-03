@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient, planConfig } from '@/lib/supabase'
 import { sendSlackNotification, formatRequestType } from '@/lib/slack'
-import { createNotionPage } from '@/lib/notion'
+import { createNotionPage, DEFAULT_NOTION_DATABASE_ID } from '@/lib/notion'
 
 // POST /api/requests - Create new request
 export async function POST(request) {
@@ -93,10 +93,11 @@ export async function POST(request) {
       link: `${baseUrl}/admin`
     })
 
-    // Create Notion page if client has a Notion database configured
-    if (client?.notion_database_id) {
+    // Create Notion page — use client-specific DB ID or global default
+    const notionDbId = client?.notion_database_id || DEFAULT_NOTION_DATABASE_ID
+    if (notionDbId) {
       const notionResult = await createNotionPage({
-        notionDatabaseId: client.notion_database_id,
+        notionDatabaseId: notionDbId,
         notionProjectId: client.notion_project_id,
         title,
         status: initialStatus,
