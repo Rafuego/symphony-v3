@@ -1,11 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { planConfig, statusConfig, requestTypes } from '@/lib/supabase'
 import RequestCard from '@/components/RequestCard'
 
 export default function ClientPortal({ client, onRefresh }) {
-  const [activeFilter, setActiveFilter] = useState('in-queue')
+  const searchParams = useSearchParams()
+  const highlightRequestId = searchParams.get('request')
+  const [activeFilter, setActiveFilter] = useState('in-progress')
+  const hasScrolled = useRef(false)
   const [showNewRequest, setShowNewRequest] = useState(false)
   const [newRequest, setNewRequest] = useState({ 
     title: '', 
@@ -63,6 +67,24 @@ export default function ClientPortal({ client, onRefresh }) {
     { id: 'in-review', label: 'In Review', count: inReviewCount },
     { id: 'completed', label: 'Completed', count: completedCount }
   ]
+
+  // Deep link: switch to correct tab and scroll to request
+  useEffect(() => {
+    if (!highlightRequestId || hasScrolled.current) return
+    const targetRequest = requests.find(r => r.id === highlightRequestId)
+    if (targetRequest) {
+      setActiveFilter(targetRequest.status)
+      hasScrolled.current = true
+      setTimeout(() => {
+        const el = document.getElementById(`request-${highlightRequestId}`)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          el.classList.add('ring-2', 'ring-[#8B7355]')
+          setTimeout(() => el.classList.remove('ring-2', 'ring-[#8B7355]'), 3000)
+        }
+      }, 100)
+    }
+  }, [highlightRequestId, requests])
 
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files)
@@ -376,16 +398,17 @@ export default function ClientPortal({ client, onRefresh }) {
             {/* Request List */}
             <div className="space-y-4">
               {filteredRequests.map((request, index) => (
-                <RequestCard
-                  key={request.id}
-                  request={request}
-                  isAdmin={false}
-                  showPriorityControls={activeFilter === 'in-queue'}
-                  queuePosition={activeFilter === 'in-queue' ? index + 1 : null}
-                  totalQueued={queuedCount}
-                  clientId={client.id}
-                  onRefresh={onRefresh}
-                />
+                <div key={request.id} id={`request-${request.id}`}>
+                  <RequestCard
+                    request={request}
+                    isAdmin={false}
+                    showPriorityControls={activeFilter === 'in-queue'}
+                    queuePosition={activeFilter === 'in-queue' ? index + 1 : null}
+                    totalQueued={queuedCount}
+                    clientId={client.id}
+                    onRefresh={onRefresh}
+                  />
+                </div>
               ))}
 
               {filteredRequests.length === 0 && (

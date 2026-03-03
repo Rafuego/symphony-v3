@@ -6,7 +6,7 @@ import RequestCard from '@/components/RequestCard'
 import PlanModal from '@/components/PlanModal'
 
 export default function AdminClientDashboard({ client, onBack, onRefresh }) {
-  const [activeFilter, setActiveFilter] = useState('in-queue')
+  const [activeFilter, setActiveFilter] = useState('in-progress')
   const [showNewRequest, setShowNewRequest] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showPlanModal, setShowPlanModal] = useState(false)
@@ -726,16 +726,17 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
             {/* Request List */}
             <div className="space-y-4">
               {filteredRequests.map((request, index) => (
-                <RequestCard
-                  key={request.id}
-                  request={request}
-                  isAdmin={true}
-                  showPriorityControls={activeFilter === 'in-queue'}
-                  queuePosition={activeFilter === 'in-queue' ? index + 1 : null}
-                  totalQueued={queuedCount}
-                  clientId={client.id}
-                  onRefresh={onRefresh}
-                />
+                <div key={request.id} id={`request-${request.id}`}>
+                  <RequestCard
+                    request={request}
+                    isAdmin={true}
+                    showPriorityControls={activeFilter === 'in-queue'}
+                    queuePosition={activeFilter === 'in-queue' ? index + 1 : null}
+                    totalQueued={queuedCount}
+                    clientId={client.id}
+                    onRefresh={onRefresh}
+                  />
+                </div>
               ))}
 
               {filteredRequests.length === 0 && (

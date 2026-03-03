@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useParams } from 'next/navigation'
 import ClientPortal from '@/components/ClientPortal'
 import PasswordGate from '@/components/PasswordGate'
@@ -117,10 +117,12 @@ export default function ClientPortalPage() {
 
   if (status === 'verified' && client) {
     return (
-      <ClientPortal 
-        client={client}
-        onRefresh={handleRefresh}
-      />
+      <Suspense fallback={<div className="min-h-screen bg-[#F5F0EB] flex items-center justify-center"><div className="text-gray-500">Loading...</div></div>}>
+        <ClientPortal
+          client={client}
+          onRefresh={handleRefresh}
+        />
+      </Suspense>
     )
   }
 

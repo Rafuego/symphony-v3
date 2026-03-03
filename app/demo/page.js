@@ -167,7 +167,7 @@ const DEMO_REQUESTS = [
 ]
 
 export default function DemoPortal() {
-  const [activeFilter, setActiveFilter] = useState('in-queue')
+  const [activeFilter, setActiveFilter] = useState('in-progress')
 
   const client = DEMO_CLIENT
   const requests = DEMO_REQUESTS
