@@ -263,6 +263,27 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                 </div>
               )}
             </div>
+
+            {/* Monthly Revenue Summary */}
+            {clients.length > 0 && (
+              <div className="mt-8 bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1">Monthly Revenue</div>
+                    <div className="font-serif text-3xl text-gray-900">
+                      ${clients.reduce((total, c) => {
+                        const price = c.custom_price || planConfig[c.plan]?.defaultPrice || 0
+                        return total + parseInt(price)
+                      }, 0).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-500 mb-1">Active Clients</div>
+                    <div className="font-serif text-3xl text-gray-900">{clients.length}</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
