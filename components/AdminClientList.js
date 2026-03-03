@@ -4,6 +4,13 @@ import { useState, useEffect } from 'react'
 import { planConfig } from '@/lib/supabase'
 import AlertsPanel from './AlertsPanel'
 
+const dealStages = {
+  lead: { label: 'Lead', color: 'bg-blue-100 text-blue-700' },
+  proposal: { label: 'Proposal', color: 'bg-purple-100 text-purple-700' },
+  negotiation: { label: 'Negotiation', color: 'bg-amber-100 text-amber-700' },
+  verbal: { label: 'Verbal', color: 'bg-green-100 text-green-700' }
+}
+
 export default function AdminClientList({ clients, onSelectClient, onRefresh }) {
   const [activeTab, setActiveTab] = useState('clients')
   const [showNewClient, setShowNewClient] = useState(false)
@@ -16,6 +23,16 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
   const [creating, setCreating] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [cadRate, setCadRate] = useState(null)
+
+  // Pending deals state
+  const [deals, setDeals] = useState([])
+  const [dealsLoading, setDealsLoading] = useState(false)
+  const [showNewDeal, setShowNewDeal] = useState(false)
+  const [newDeal, setNewDeal] = useState({
+    name: '', contactName: '', contactEmail: '', plan: 'growth', estimatedPrice: '', notes: '', status: 'lead'
+  })
+  const [creatingDeal, setCreatingDeal] = useState(false)
+  const [editingDeal, setEditingDeal] = useState(null)
 
   // Fetch unread notification count
   const fetchUnreadCount = async () => {
@@ -39,6 +56,21 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
     }
   }
 
+  // Fetch pending deals
+  const fetchDeals = async () => {
+    setDealsLoading(true)
+    try {
+      const res = await fetch('/api/deals')
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setDeals(data.deals || [])
+    } catch (err) {
+      console.error('Error fetching deals:', err)
+    } finally {
+      setDealsLoading(false)
+    }
+  }
+
   useEffect(() => {
     fetchUnreadCount()
     fetchCadRate()
@@ -46,9 +78,14 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
     return () => clearInterval(interval)
   }, [])
 
+  // Fetch deals when switching to pending tab
+  useEffect(() => {
+    if (activeTab === 'pending') fetchDeals()
+  }, [activeTab])
+
   const handleCreateClient = async () => {
     if (!newClient.name) return
-    
+
     setCreating(true)
     try {
       const res = await fetch('/api/clients', {
@@ -56,10 +93,10 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newClient)
       })
-      
+
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      
+
       setNewClient({ name: '', plan: 'growth', password: '', passwordEnabled: false })
       setShowNewClient(false)
       onRefresh()
@@ -67,6 +104,57 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
       alert('Error creating client: ' + err.message)
     } finally {
       setCreating(false)
+    }
+  }
+
+  const handleCreateDeal = async () => {
+    if (!newDeal.name) return
+
+    setCreatingDeal(true)
+    try {
+      const res = await fetch('/api/deals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newDeal)
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+
+      setNewDeal({ name: '', contactName: '', contactEmail: '', plan: 'growth', estimatedPrice: '', notes: '', status: 'lead' })
+      setShowNewDeal(false)
+      fetchDeals()
+    } catch (err) {
+      alert('Error creating deal: ' + err.message)
+    } finally {
+      setCreatingDeal(false)
+    }
+  }
+
+  const handleUpdateDeal = async (dealId, updates) => {
+    try {
+      const res = await fetch(`/api/deals/${dealId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      fetchDeals()
+    } catch (err) {
+      alert('Error updating deal: ' + err.message)
+    }
+  }
+
+  const handleDeleteDeal = async (dealId) => {
+    if (!confirm('Remove this deal?')) return
+    try {
+      const res = await fetch(`/api/deals/${dealId}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setEditingDeal(null)
+      fetchDeals()
+    } catch (err) {
+      alert('Error deleting deal: ' + err.message)
     }
   }
 
@@ -80,7 +168,7 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
     <div className="min-h-screen bg-[#F5F0EB]">
       {/* Top accent bar */}
       <div className="h-1.5 bg-[#8B7355]" />
-      
+
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-10 py-5">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
@@ -115,6 +203,21 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
               Clients
             </button>
             <button
+              onClick={() => setActiveTab('pending')}
+              className={`px-5 py-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+                activeTab === 'pending'
+                  ? 'border-[#8B7355] text-[#8B7355]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Pending
+              {deals.length > 0 && (
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded-full">
+                  {deals.length}
+                </span>
+              )}
+            </button>
+            <button
               onClick={() => { setActiveTab('alerts'); fetchUnreadCount(); }}
               className={`px-5 py-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
                 activeTab === 'alerts'
@@ -139,7 +242,292 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
           <AlertsPanel onSelectClient={(clientId) => {
             onSelectClient(clientId)
           }} />
+
+        ) : activeTab === 'pending' ? (
+          /* ===== PENDING DEALS TAB ===== */
+          <>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="font-serif text-2xl font-normal text-gray-900">
+                Pending Deals
+              </h2>
+              <button
+                onClick={() => setShowNewDeal(true)}
+                className="btn-primary"
+              >
+                + New Deal
+              </button>
+            </div>
+
+            {/* New Deal Form */}
+            {showNewDeal && (
+              <div className="card mb-6">
+                <h3 className="font-serif text-xl mb-5">Add Pending Deal</h3>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="label">Company Name</label>
+                    <input
+                      type="text"
+                      value={newDeal.name}
+                      onChange={(e) => setNewDeal({ ...newDeal, name: e.target.value })}
+                      placeholder="e.g., Acme Corp"
+                      className="input"
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Stage</label>
+                    <select
+                      value={newDeal.status}
+                      onChange={(e) => setNewDeal({ ...newDeal, status: e.target.value })}
+                      className="input"
+                    >
+                      <option value="lead">Lead</option>
+                      <option value="proposal">Proposal</option>
+                      <option value="negotiation">Negotiation</option>
+                      <option value="verbal">Verbal</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="label">Contact Name</label>
+                    <input
+                      type="text"
+                      value={newDeal.contactName}
+                      onChange={(e) => setNewDeal({ ...newDeal, contactName: e.target.value })}
+                      placeholder="e.g., John Smith"
+                      className="input"
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Contact Email</label>
+                    <input
+                      type="email"
+                      value={newDeal.contactEmail}
+                      onChange={(e) => setNewDeal({ ...newDeal, contactEmail: e.target.value })}
+                      placeholder="e.g., john@acme.com"
+                      className="input"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="label">Likely Plan</label>
+                    <select
+                      value={newDeal.plan}
+                      onChange={(e) => setNewDeal({ ...newDeal, plan: e.target.value })}
+                      className="input"
+                    >
+                      <option value="launch">Launch</option>
+                      <option value="growth">Growth</option>
+                      <option value="scale">Scale</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label">Estimated Price (USD)</label>
+                    <input
+                      type="number"
+                      value={newDeal.estimatedPrice}
+                      onChange={(e) => setNewDeal({ ...newDeal, estimatedPrice: e.target.value })}
+                      placeholder="e.g., 3500"
+                      className="input"
+                    />
+                  </div>
+                </div>
+                <div className="mb-5">
+                  <label className="label">Notes</label>
+                  <textarea
+                    value={newDeal.notes}
+                    onChange={(e) => setNewDeal({ ...newDeal, notes: e.target.value })}
+                    placeholder="Any notes about this deal..."
+                    rows={2}
+                    className="input resize-y"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={handleCreateDeal} disabled={creatingDeal} className="btn-primary">
+                    {creatingDeal ? 'Adding...' : 'Add Deal'}
+                  </button>
+                  <button onClick={() => setShowNewDeal(false)} className="btn-secondary">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Deals List */}
+            {dealsLoading ? (
+              <div className="card text-center py-12">
+                <p className="text-gray-500">Loading deals...</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {deals.map(deal => {
+                  const stage = dealStages[deal.status] || dealStages.lead
+                  const isEditing = editingDeal === deal.id
+                  return (
+                    <div key={deal.id} className="card">
+                      <div className="flex items-center gap-5">
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
+                          💼
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-serif text-lg text-gray-900">{deal.name}</h3>
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${stage.color}`}>
+                              {stage.label}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {deal.contact_name && <span>{deal.contact_name}</span>}
+                            {deal.contact_name && deal.contact_email && <span> • </span>}
+                            {deal.contact_email && <span>{deal.contact_email}</span>}
+                            {!deal.contact_name && !deal.contact_email && <span className="text-gray-400">No contact info</span>}
+                          </div>
+                        </div>
+                        {deal.estimated_price && (
+                          <div className="text-right mr-2">
+                            <div className="text-lg font-semibold text-gray-900">
+                              ${parseInt(deal.estimated_price).toLocaleString()}
+                            </div>
+                            <div className="text-xs text-gray-400">/month est.</div>
+                          </div>
+                        )}
+                        <div className={`px-3 py-1.5 rounded text-xs font-semibold uppercase ${
+                          deal.plan === 'scale' ? 'bg-gray-900 text-white' : 'bg-[#8B7355] text-white'
+                        }`}>
+                          {planConfig[deal.plan]?.name || deal.plan}
+                        </div>
+                        <button
+                          onClick={() => setEditingDeal(isEditing ? null : deal.id)}
+                          className="px-3 py-2 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200"
+                        >
+                          {isEditing ? 'Close' : 'Edit'}
+                        </button>
+                      </div>
+
+                      {/* Expanded edit area */}
+                      {isEditing && (
+                        <div className="mt-5 pt-5 border-t border-gray-100">
+                          <div className="grid grid-cols-3 gap-4 mb-4">
+                            <div>
+                              <label className="label">Stage</label>
+                              <select
+                                value={deal.status}
+                                onChange={(e) => handleUpdateDeal(deal.id, { status: e.target.value })}
+                                className="input"
+                              >
+                                <option value="lead">Lead</option>
+                                <option value="proposal">Proposal</option>
+                                <option value="negotiation">Negotiation</option>
+                                <option value="verbal">Verbal</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="label">Contact Name</label>
+                              <input
+                                type="text"
+                                defaultValue={deal.contact_name || ''}
+                                onBlur={(e) => handleUpdateDeal(deal.id, { contactName: e.target.value })}
+                                className="input"
+                              />
+                            </div>
+                            <div>
+                              <label className="label">Contact Email</label>
+                              <input
+                                type="email"
+                                defaultValue={deal.contact_email || ''}
+                                onBlur={(e) => handleUpdateDeal(deal.id, { contactEmail: e.target.value })}
+                                className="input"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-4 mb-4">
+                            <div>
+                              <label className="label">Likely Plan</label>
+                              <select
+                                value={deal.plan}
+                                onChange={(e) => handleUpdateDeal(deal.id, { plan: e.target.value })}
+                                className="input"
+                              >
+                                <option value="launch">Launch</option>
+                                <option value="growth">Growth</option>
+                                <option value="scale">Scale</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="label">Estimated Price (USD)</label>
+                              <input
+                                type="number"
+                                defaultValue={deal.estimated_price || ''}
+                                onBlur={(e) => handleUpdateDeal(deal.id, { estimatedPrice: e.target.value })}
+                                className="input"
+                              />
+                            </div>
+                            <div className="flex items-end">
+                              <button
+                                onClick={() => handleDeleteDeal(deal.id)}
+                                className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
+                              >
+                                Remove Deal
+                              </button>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="label">Notes</label>
+                            <textarea
+                              defaultValue={deal.notes || ''}
+                              onBlur={(e) => handleUpdateDeal(deal.id, { notes: e.target.value })}
+                              rows={2}
+                              placeholder="Notes about this deal..."
+                              className="input resize-y"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+
+                {deals.length === 0 && !dealsLoading && (
+                  <div className="card text-center py-12">
+                    <div className="text-5xl mb-4 opacity-50">🤝</div>
+                    <p className="text-gray-500">No pending deals. Add one to start tracking prospects.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Pipeline Summary */}
+            {deals.length > 0 && (
+              <div className="mt-8 bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1">Pipeline Value (USD)</div>
+                    <div className="text-2xl font-semibold text-gray-900">
+                      ${deals.reduce((total, d) => total + (parseInt(d.estimated_price) || 0), 0).toLocaleString()}
+                    </div>
+                  </div>
+                  {cadRate && (
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">
+                        Pipeline Value (CAD)<span className="text-xs text-gray-400 ml-1">@ {cadRate.toFixed(2)}</span>
+                      </div>
+                      <div className="text-2xl font-semibold text-gray-900">
+                        C${Math.round(deals.reduce((total, d) => total + (parseInt(d.estimated_price) || 0), 0) * cadRate).toLocaleString()}
+                      </div>
+                    </div>
+                  )}
+                  <div className="text-right">
+                    <div className="text-sm text-gray-500 mb-1">Deals in Pipeline</div>
+                    <div className="text-2xl font-semibold text-gray-900">{deals.length}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+
         ) : (
+          /* ===== CLIENTS TAB ===== */
           <>
             <div className="flex justify-between items-center mb-6">
               <h2 className="font-serif text-2xl font-normal text-gray-900">
@@ -293,7 +681,7 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                     >
                       🔗 Copy Link
                     </button>
-                    <div 
+                    <div
                       className="text-gray-400 cursor-pointer"
                       onClick={() => onSelectClient(client.id)}
                     >
