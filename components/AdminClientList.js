@@ -15,6 +15,7 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
   })
   const [creating, setCreating] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [cadRate, setCadRate] = useState(null)
 
   // Fetch unread notification count
   const fetchUnreadCount = async () => {
@@ -27,8 +28,20 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
     }
   }
 
+  // Fetch USD to CAD exchange rate
+  const fetchCadRate = async () => {
+    try {
+      const res = await fetch('https://open.er-api.com/v6/latest/USD')
+      const data = await res.json()
+      if (data.rates?.CAD) setCadRate(data.rates.CAD)
+    } catch (err) {
+      console.error('Error fetching CAD rate:', err)
+    }
+  }
+
   useEffect(() => {
     fetchUnreadCount()
+    fetchCadRate()
     const interval = setInterval(fetchUnreadCount, 30000)
     return () => clearInterval(interval)
   }, [])
@@ -284,12 +297,26 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
               <div className="mt-8 bg-white rounded-lg shadow-sm p-6 border border-gray-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm text-gray-500 mb-1">Monthly Revenue</div>
+                    <div className="text-sm text-gray-500 mb-1">Monthly Revenue (USD)</div>
                     <div className="text-2xl font-semibold text-gray-900">
                       ${clients.reduce((total, c) => {
                         const price = c.custom_price || planConfig[c.plan]?.defaultPrice || 0
                         return total + parseInt(price)
                       }, 0).toLocaleString()}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1">
+                      Monthly Revenue (CAD){cadRate && <span className="text-xs text-gray-400 ml-1">@ {cadRate.toFixed(2)}</span>}
+                    </div>
+                    <div className="text-2xl font-semibold text-gray-900">
+                      {cadRate
+                        ? `C$${Math.round(clients.reduce((total, c) => {
+                            const price = c.custom_price || planConfig[c.plan]?.defaultPrice || 0
+                            return total + parseInt(price)
+                          }, 0) * cadRate).toLocaleString()}`
+                        : '...'
+                      }
                     </div>
                   </div>
                   <div className="text-right">
