@@ -18,7 +18,7 @@ export async function POST(request) {
     // Get client info for capacity check and notification
     const { data: client } = await supabase
       .from('clients')
-      .select('id, name, plan, custom_max_active, notion_database_id, notion_project_id')
+      .select('id, name, plan, custom_max_active, notion_database_id, notion_project_id, access_token')
       .eq('id', clientId)
       .single()
     
@@ -103,7 +103,7 @@ export async function POST(request) {
         status: initialStatus,
         requestType: requestType || 'misc',
         clientName: client.name,
-        symphonyLink: `${baseUrl}/admin`,
+        symphonyLink: `${baseUrl}/portal/${client.access_token}?request=${newRequest.id}`,
         description,
         priority: nextPriority,
         links: links || [],
