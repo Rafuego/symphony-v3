@@ -199,6 +199,7 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
             <div className="space-y-3">
               {clients.map(client => {
                 const plan = planConfig[client.plan]
+                const clientPrice = client.custom_price || plan?.defaultPrice
                 return (
                   <div
                     key={client.id}
@@ -222,6 +223,14 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                           {client.activeCount} active • {client.queuedCount} queued
                         </div>
                       </div>
+                      {clientPrice && (
+                        <div className="text-right mr-2">
+                          <div className="text-lg font-semibold text-gray-900">
+                            ${parseInt(clientPrice).toLocaleString()}
+                          </div>
+                          <div className="text-xs text-gray-400">/month</div>
+                        </div>
+                      )}
                       <div className={`px-3 py-1.5 rounded text-xs font-semibold uppercase ${
                         client.plan === 'scale' ? 'bg-gray-900 text-white' : 'bg-[#8B7355] text-white'
                       }`}>
