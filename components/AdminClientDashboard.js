@@ -24,6 +24,9 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
   const [passwordEnabled, setPasswordEnabled] = useState(client.password_enabled)
   const [submitting, setSubmitting] = useState(false)
 
+  // Client tag state
+  const [clientTag, setClientTag] = useState(client.client_tag || '')
+
   // Notion integration state
   const [notionDatabaseId, setNotionDatabaseId] = useState(client.notion_database_id || '')
   const [notionProjectId, setNotionProjectId] = useState(client.notion_project_id || '')
@@ -378,7 +381,7 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
       {/* Settings Panel */}
       {showSettings && (
         <div className="bg-white border-b border-gray-200 px-10 py-6">
-          <div className="max-w-6xl mx-auto grid grid-cols-3 gap-8">
+          <div className="max-w-6xl mx-auto grid grid-cols-4 gap-8">
             <div>
               <label className="label">Plan</label>
               <select
@@ -396,6 +399,33 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
               >
                 Edit Plan Configuration
               </button>
+            </div>
+            <div>
+              <label className="label">Client Type</label>
+              <select
+                value={clientTag}
+                onChange={async (e) => {
+                  const newTag = e.target.value
+                  setClientTag(newTag)
+                  try {
+                    const res = await fetch(`/api/clients/${client.id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ clientTag: newTag || null })
+                    })
+                    const data = await res.json()
+                    if (data.error) throw new Error(data.error)
+                    onRefresh()
+                  } catch (err) {
+                    alert('Error saving client type: ' + err.message)
+                  }
+                }}
+                className="input"
+              >
+                <option value="">No tag</option>
+                <option value="symphony">Symphony</option>
+                <option value="legacy_drip">Legacy Drip</option>
+              </select>
             </div>
             <div>
               <label className="label">Access Password</label>

@@ -218,6 +218,15 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                           {client.password_enabled && (
                             <span title="Password protected">🔒</span>
                           )}
+                          {client.client_tag && (
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                              client.client_tag === 'symphony'
+                                ? 'bg-purple-100 text-purple-700'
+                                : 'bg-amber-100 text-amber-700'
+                            }`}>
+                              {client.client_tag === 'symphony' ? 'Symphony' : 'Legacy Drip'}
+                            </span>
+                          )}
                         </div>
                         <div className="text-sm text-gray-500">
                           {client.activeCount} active • {client.queuedCount} queued

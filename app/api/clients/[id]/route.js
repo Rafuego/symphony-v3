@@ -68,6 +68,11 @@ export async function PATCH(request, { params }) {
       updates.brand_assets = body.brandAssets
     }
 
+    // Handle client tag (symphony / legacy_drip)
+    if (body.clientTag !== undefined) {
+      updates.client_tag = body.clientTag || null
+    }
+
     // Handle Notion database ID
     if (body.notionDatabaseId !== undefined) {
       updates.notion_database_id = body.notionDatabaseId || null
