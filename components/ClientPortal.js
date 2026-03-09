@@ -20,6 +20,8 @@ export default function ClientPortal({ client, onRefresh }) {
   })
   const [submitting, setSubmitting] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [brandAssets, setBrandAssets] = useState(client.brand_assets || [])
+  const [uploadingAsset, setUploadingAsset] = useState(false)
 
   const currentPlan = client.custom_price 
     ? {
@@ -59,7 +61,6 @@ export default function ClientPortal({ client, onRefresh }) {
   const activeCount = requests.filter(r => r.status === 'in-progress' || r.status === 'in-review').length
   const queuedCount = requests.filter(r => r.status === 'in-queue').length
   const completedCount = requests.filter(r => r.status === 'completed').length
-  const brandAssets = client.brand_assets || []
 
   const tabs = [
     { id: 'in-queue', label: 'Queue', count: queuedCount },
@@ -135,6 +136,56 @@ export default function ClientPortal({ client, onRefresh }) {
   const removeAttachment = (index) => {
     const updated = newRequest.attachments.filter((_, i) => i !== index)
     setNewRequest({ ...newRequest, attachments: updated })
+  }
+
+  const handleBrandAssetUpload = async (e) => {
+    const files = Array.from(e.target.files)
+    if (files.length === 0) return
+
+    setUploadingAsset(true)
+    try {
+      const uploadedFiles = []
+
+      for (const file of files) {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('clientId', client.id)
+
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        })
+
+        const data = await res.json()
+        if (data.error) throw new Error(data.error)
+
+        uploadedFiles.push({
+          url: data.url,
+          name: data.filename,
+          type: data.type,
+          size: data.size,
+          addedAt: new Date().toISOString()
+        })
+      }
+
+      const newAssets = [...brandAssets, ...uploadedFiles]
+
+      const saveRes = await fetch(`/api/clients/${client.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brandAssets: newAssets })
+      })
+      const saveData = await saveRes.json()
+      if (saveData.error) throw new Error(saveData.error)
+
+      setBrandAssets(newAssets)
+      onRefresh()
+    } catch (err) {
+      alert('Error uploading brand asset: ' + err.message)
+    } finally {
+      setUploadingAsset(false)
+      e.target.value = ''
+    }
   }
 
   const handleSubmitRequest = async () => {
@@ -496,9 +547,25 @@ export default function ClientPortal({ client, onRefresh }) {
           </div>
 
           {/* Brand Assets */}
-          {brandAssets.length > 0 && (
-            <div className="card mt-5">
-              <h3 className="font-serif text-lg mb-4">Brand Assets</h3>
+          <div className="card mt-5">
+            <h3 className="font-serif text-lg mb-4">Brand Assets</h3>
+
+            {/* Upload button */}
+            <label className={`flex items-center justify-center gap-2 px-3 py-3 mb-4 border-2 border-dashed rounded-lg cursor-pointer transition-colors text-sm ${
+              uploadingAsset ? 'border-gray-200 bg-gray-50 text-gray-400' : 'border-gray-300 hover:border-[#8B7355] hover:bg-[#F5F0EB] text-gray-500'
+            }`}>
+              <input
+                type="file"
+                accept="*"
+                multiple
+                onChange={handleBrandAssetUpload}
+                disabled={uploadingAsset}
+                className="hidden"
+              />
+              {uploadingAsset ? 'Uploading...' : '+ Upload Assets'}
+            </label>
+
+            {brandAssets.length > 0 ? (
               <div className="space-y-2">
                 {brandAssets.map((asset, index) => (
                   <a
@@ -513,8 +580,10 @@ export default function ClientPortal({ client, onRefresh }) {
                   </a>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-sm text-gray-400 text-center py-2">No assets uploaded yet</p>
+            )}
+          </div>
 
           {/* Contact */}
           <div className="bg-gray-900 rounded-lg p-5 mt-5">

@@ -31,13 +31,29 @@ export async function POST(request) {
     const buffer = Buffer.from(arrayBuffer)
     
     // Upload to Supabase Storage
-    const { data, error } = await supabase.storage
-      .from('request-files')
+    // Try 'request-files' bucket first, create it if it doesn't exist
+    let bucket = 'request-files'
+    let { data, error } = await supabase.storage
+      .from(bucket)
       .upload(filename, buffer, {
         contentType: file.type || 'application/octet-stream',
         upsert: false
       })
-    
+
+    // If bucket doesn't exist, create it and retry
+    if (error && (error.message?.includes('not found') || error.statusCode === 404 || error.message?.includes('Bucket'))) {
+      console.log('Creating storage bucket:', bucket)
+      await supabase.storage.createBucket(bucket, { public: true })
+      const retry = await supabase.storage
+        .from(bucket)
+        .upload(filename, buffer, {
+          contentType: file.type || 'application/octet-stream',
+          upsert: false
+        })
+      data = retry.data
+      error = retry.error
+    }
+
     if (error) throw error
     
     // Get public URL
