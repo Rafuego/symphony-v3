@@ -110,10 +110,15 @@ export default function ClientPortal({ client, onRefresh }) {
           method: 'POST',
           body: formData
         })
-        
+
+        if (!res.ok) {
+          const text = await res.text()
+          throw new Error(text.includes('Too Large') ? 'File too large. Maximum 4.5MB per file on this hosting plan.' : text)
+        }
+
         const data = await res.json()
         if (data.error) throw new Error(data.error)
-        
+
         uploadedFiles.push({
           url: data.url,
           name: data.filename,
@@ -121,7 +126,7 @@ export default function ClientPortal({ client, onRefresh }) {
           size: data.size
         })
       }
-      
+
       setNewRequest({
         ...newRequest,
         attachments: [...newRequest.attachments, ...uploadedFiles]
@@ -155,6 +160,11 @@ export default function ClientPortal({ client, onRefresh }) {
           method: 'POST',
           body: formData
         })
+
+        if (!res.ok) {
+          const text = await res.text()
+          throw new Error(text.includes('Too Large') ? 'File too large. Maximum 4.5MB per file on this hosting plan.' : text)
+        }
 
         const data = await res.json()
         if (data.error) throw new Error(data.error)

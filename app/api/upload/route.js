@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
 
+// Allow larger file uploads (up to 25MB)
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+}
+
+export const runtime = 'nodejs'
+export const maxDuration = 60
+
 // POST /api/upload - Upload a file to Supabase Storage
 export async function POST(request) {
   try {

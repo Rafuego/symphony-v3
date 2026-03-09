@@ -36,7 +36,6 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
   // Brand assets state
   const [brandAssets, setBrandAssets] = useState(client.brand_assets || [])
   const [uploadingAsset, setUploadingAsset] = useState(false)
-  const [newAssetCategory, setNewAssetCategory] = useState('Logo')
 
   const currentPlan = client.custom_price 
     ? {
@@ -107,10 +106,15 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
           method: 'POST',
           body: formData
         })
-        
+
+        if (!res.ok) {
+          const text = await res.text()
+          throw new Error(text.includes('Too Large') ? 'File too large. Maximum 4.5MB per file.' : text)
+        }
+
         const data = await res.json()
         if (data.error) throw new Error(data.error)
-        
+
         uploadedFiles.push({
           url: data.url,
           name: data.filename,
@@ -293,16 +297,20 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
           method: 'POST',
           body: formData
         })
-        
+
+        if (!res.ok) {
+          const text = await res.text()
+          throw new Error(text.includes('Too Large') ? 'File too large. Maximum 4.5MB per file.' : text)
+        }
+
         const data = await res.json()
         if (data.error) throw new Error(data.error)
-        
+
         uploadedFiles.push({
           url: data.url,
           name: data.filename,
           type: data.type,
           size: data.size,
-          category: newAssetCategory,
           addedAt: new Date().toISOString()
         })
       }
@@ -820,34 +828,19 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
             <h3 className="font-serif text-lg mb-4">Brand Assets</h3>
             
             {/* Upload */}
-            <div className="mb-4">
-              <div className="flex gap-2 mb-2">
-                <select
-                  value={newAssetCategory}
-                  onChange={(e) => setNewAssetCategory(e.target.value)}
-                  className="px-2 py-1 border border-gray-300 rounded text-xs flex-1"
-                >
-                  <option value="Logo">Logo</option>
-                  <option value="Colors">Colors</option>
-                  <option value="Fonts">Fonts</option>
-                  <option value="Guidelines">Guidelines</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <label className={`flex items-center justify-center gap-2 px-3 py-2 border-2 border-dashed rounded-lg cursor-pointer transition-colors text-sm ${
-                uploadingAsset ? 'border-gray-200 bg-gray-50' : 'border-purple-300 hover:border-purple-500 hover:bg-purple-50'
-              }`}>
-                <input
-                  type="file"
-                  accept="*"
-                  multiple
-                  onChange={handleBrandAssetUpload}
-                  disabled={uploadingAsset}
-                  className="hidden"
-                />
-                {uploadingAsset ? 'Uploading...' : '📦 Upload Asset'}
-              </label>
-            </div>
+            <label className={`flex items-center justify-center gap-2 px-3 py-2 mb-4 border-2 border-dashed rounded-lg cursor-pointer transition-colors text-sm ${
+              uploadingAsset ? 'border-gray-200 bg-gray-50' : 'border-purple-300 hover:border-purple-500 hover:bg-purple-50'
+            }`}>
+              <input
+                type="file"
+                accept="*"
+                multiple
+                onChange={handleBrandAssetUpload}
+                disabled={uploadingAsset}
+                className="hidden"
+              />
+              {uploadingAsset ? 'Uploading...' : '📦 Upload Asset'}
+            </label>
             
             {/* Asset List */}
             {brandAssets.length > 0 ? (
