@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { planConfig, statusConfig, requestTypes } from '@/lib/supabase'
+import { uploadFile } from '@/lib/uploadFile'
 import RequestCard from '@/components/RequestCard'
 import PlanModal from '@/components/PlanModal'
 
@@ -98,31 +99,10 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
       const uploadedFiles = []
       
       for (const file of files) {
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('clientId', client.id)
-        
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData
-        })
-
-        if (!res.ok) {
-          const text = await res.text()
-          throw new Error(text.includes('Too Large') ? 'File too large. Maximum 4.5MB per file.' : text)
-        }
-
-        const data = await res.json()
-        if (data.error) throw new Error(data.error)
-
-        uploadedFiles.push({
-          url: data.url,
-          name: data.filename,
-          type: data.type,
-          size: data.size
-        })
+        const data = await uploadFile(file, client.id)
+        uploadedFiles.push(data)
       }
-      
+
       setNewRequest({
         ...newRequest,
         attachments: [...newRequest.attachments, ...uploadedFiles]
@@ -289,30 +269,9 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
       const uploadedFiles = []
       
       for (const file of files) {
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('clientId', client.id)
-        
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData
-        })
-
-        if (!res.ok) {
-          const text = await res.text()
-          throw new Error(text.includes('Too Large') ? 'File too large. Maximum 4.5MB per file.' : text)
-        }
-
-        const data = await res.json()
-        if (data.error) throw new Error(data.error)
-
-        uploadedFiles.push({
-          url: data.url,
-          name: data.filename,
-          type: data.type,
-          size: data.size,
-          addedAt: new Date().toISOString()
-        })
+        const data = await uploadFile(file, client.id)
+        uploadedFiles.push({ ...data, addedAt: new Date().toISOString() })
+      }
       }
       
       const newAssets = [...brandAssets, ...uploadedFiles]

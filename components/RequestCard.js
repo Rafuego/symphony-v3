@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { statusConfig, requestTypes } from '@/lib/supabase'
+import { uploadFile } from '@/lib/uploadFile'
 import { getBusinessHoursRemaining, renderMarkdown } from '@/lib/utils'
 
 export default function RequestCard({ 
@@ -186,26 +187,10 @@ export default function RequestCard({
       const uploadedFiles = []
       
       for (const file of files) {
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('clientId', clientId)
-        
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData
-        })
-        
-        const data = await res.json()
-        if (data.error) throw new Error(data.error)
-        
-        uploadedFiles.push({
-          url: data.url,
-          name: data.filename,
-          type: data.type,
-          size: data.size
-        })
+        const data = await uploadFile(file, clientId)
+        uploadedFiles.push(data)
       }
-      
+
       setEditData({
         ...editData,
         attachments: [...editData.attachments, ...uploadedFiles]
@@ -277,25 +262,9 @@ export default function RequestCard({
       const uploadedFiles = []
       
       for (const file of files) {
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('clientId', clientId)
-        
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData
-        })
-        
-        const data = await res.json()
-        if (data.error) throw new Error(data.error)
-        
-        uploadedFiles.push({
-          url: data.url,
-          name: data.filename,
-          type: data.type,
-          size: data.size,
-          addedAt: new Date().toISOString()
-        })
+        const data = await uploadFile(file, clientId)
+        uploadedFiles.push({ ...data, addedAt: new Date().toISOString() })
+      }
       }
       
       const newDeliverables = [...deliverables, ...uploadedFiles]

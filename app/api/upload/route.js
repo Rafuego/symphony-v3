@@ -1,84 +1,54 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
 
-// Allow larger file uploads (up to 25MB)
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}
-
-export const runtime = 'nodejs'
-export const maxDuration = 60
-
-// POST /api/upload - Upload a file to Supabase Storage
+// POST /api/upload - Generate a signed upload URL for direct-to-Supabase uploads
 export async function POST(request) {
   try {
     const supabase = createServerSupabaseClient()
-    const formData = await request.formData()
-    
-    const file = formData.get('file')
-    const clientId = formData.get('clientId')
-    
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    const { filename, contentType, clientId } = await request.json()
+
+    if (!filename) {
+      return NextResponse.json({ error: 'No filename provided' }, { status: 400 })
     }
-    
-    // Validate file size (25MB max)
-    const maxSize = 25 * 1024 * 1024
-    if (file.size > maxSize) {
-      return NextResponse.json({ error: 'File too large. Maximum 25MB.' }, { status: 400 })
-    }
-    
-    // Generate unique filename
+
+    // Generate unique storage path
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 8)
-    const extension = file.name.split('.').pop() || 'file'
-    const filename = `${clientId}/${timestamp}-${randomString}.${extension}`
-    
-    // Convert file to buffer
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
-    
-    // Upload to Supabase Storage
-    // Try 'request-files' bucket first, create it if it doesn't exist
-    let bucket = 'request-files'
+    const extension = filename.split('.').pop() || 'file'
+    const path = `${clientId || 'general'}/${timestamp}-${randomString}.${extension}`
+
+    const bucket = 'request-files'
+
+    // Create signed upload URL
     let { data, error } = await supabase.storage
       .from(bucket)
-      .upload(filename, buffer, {
-        contentType: file.type || 'application/octet-stream',
-        upsert: false
-      })
+      .createSignedUploadUrl(path)
 
     // If bucket doesn't exist, create it and retry
     if (error && (error.message?.includes('not found') || error.statusCode === 404 || error.message?.includes('Bucket'))) {
-      console.log('Creating storage bucket:', bucket)
       await supabase.storage.createBucket(bucket, { public: true })
       const retry = await supabase.storage
         .from(bucket)
-        .upload(filename, buffer, {
-          contentType: file.type || 'application/octet-stream',
-          upsert: false
-        })
+        .createSignedUploadUrl(path)
       data = retry.data
       error = retry.error
     }
 
     if (error) throw error
-    
-    // Get public URL
+
+    // Build the public URL
     const { data: { publicUrl } } = supabase.storage
-      .from('request-files')
-      .getPublicUrl(filename)
-    
-    return NextResponse.json({ 
-      url: publicUrl,
-      filename: file.name,
-      type: file.type || 'application/octet-stream',
-      size: file.size
+      .from(bucket)
+      .getPublicUrl(path)
+
+    return NextResponse.json({
+      signedUrl: data.signedUrl,
+      token: data.token,
+      path,
+      publicUrl
     })
   } catch (error) {
-    console.error('Error uploading file:', error)
+    console.error('Error creating upload URL:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
