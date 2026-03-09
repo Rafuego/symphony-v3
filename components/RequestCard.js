@@ -265,8 +265,7 @@ export default function RequestCard({
         const data = await uploadFile(file, clientId)
         uploadedFiles.push({ ...data, addedAt: new Date().toISOString() })
       }
-      }
-      
+
       const newDeliverables = [...deliverables, ...uploadedFiles]
       await fetch(`/api/requests/${request.id}`, {
         method: 'PATCH',

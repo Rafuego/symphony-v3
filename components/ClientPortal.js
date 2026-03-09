@@ -135,7 +135,6 @@ export default function ClientPortal({ client, onRefresh }) {
         const data = await uploadFile(file, client.id)
         uploadedFiles.push({ ...data, addedAt: new Date().toISOString() })
       }
-      }
 
       const newAssets = [...brandAssets, ...uploadedFiles]
 
