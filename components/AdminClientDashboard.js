@@ -272,8 +272,7 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
         const data = await uploadFile(file, client.id)
         uploadedFiles.push({ ...data, addedAt: new Date().toISOString() })
       }
-      }
-      
+
       const newAssets = [...brandAssets, ...uploadedFiles]
       
       await fetch(`/api/clients/${client.id}`, {
