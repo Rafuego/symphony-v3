@@ -80,9 +80,10 @@ export async function POST(request) {
         request_id: newRequest.id
       })
     
-    // Send Slack notification
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
-      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+    // Derive base URL from request origin (reliable on Vercel with custom domains)
+    const host = request.headers.get('host') || request.headers.get('x-forwarded-host')
+    const protocol = request.headers.get('x-forwarded-proto') || 'https'
+    const baseUrl = host ? `${protocol}://${host}` : 'https://symphony.interlude.studio'
     
     await sendSlackNotification({
       title: `New Request from ${client?.name || 'Client'}`,
@@ -115,7 +116,7 @@ export async function POST(request) {
         symphonyLink,
         description,
         priority: nextPriority,
-        links: links || [],
+        links: (links || []).filter(l => l && l.trim()),
         attachments: attachments || [],
         createdAt: newRequest.created_at,
         startedAt,
