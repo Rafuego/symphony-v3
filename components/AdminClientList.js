@@ -145,6 +145,32 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
     }
   }
 
+  const handleConvertDeal = async (deal) => {
+    if (!confirm(`Convert "${deal.name}" to an active client?`)) return
+    try {
+      const res = await fetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: deal.name,
+          plan: deal.plan || 'growth',
+          customPlan: deal.estimated_price ? { price: deal.estimated_price } : undefined
+        })
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+
+      // Remove the deal after successful conversion
+      await fetch(`/api/deals/${deal.id}`, { method: 'DELETE' })
+      setEditingDeal(null)
+      fetchDeals()
+      onRefresh()
+      setActiveTab('clients')
+    } catch (err) {
+      alert('Error converting deal: ' + err.message)
+    }
+  }
+
   const handleDeleteDeal = async (dealId) => {
     if (!confirm('Remove this deal?')) return
     try {
@@ -463,12 +489,18 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                                 className="input"
                               />
                             </div>
-                            <div className="flex items-end">
+                            <div className="flex items-end gap-2">
+                              <button
+                                onClick={() => handleConvertDeal(deal)}
+                                className="px-4 py-2 text-sm text-white bg-[#8B7355] hover:bg-[#7A6548] rounded-lg transition-colors"
+                              >
+                                Convert to Client
+                              </button>
                               <button
                                 onClick={() => handleDeleteDeal(deal.id)}
                                 className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
                               >
-                                Remove Deal
+                                Remove
                               </button>
                             </div>
                           </div>
