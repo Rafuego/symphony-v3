@@ -81,9 +81,8 @@ export async function POST(request) {
       })
     
     // Send Slack notification
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'http://localhost:3000'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
     
     await sendSlackNotification({
       title: `New Request from ${client?.name || 'Client'}`,
@@ -95,22 +94,25 @@ export async function POST(request) {
 
     // Create Notion page — use client-specific DB ID or global default
     const notionDbId = client?.notion_database_id || DEFAULT_NOTION_DATABASE_ID
-    console.log('Notion integration:', {
-      hasApiKey: !!process.env.NOTION_API_KEY,
-      notionDbId,
-      notionProjectId: client?.notion_project_id,
-      clientName: client?.name
-    })
+    let notionResult = null
 
     if (notionDbId) {
-      const notionResult = await createNotionPage({
+      const symphonyLink = `${baseUrl}/portal/${client.access_token}?request=${newRequest.id}`
+      console.log('Notion integration:', {
+        hasApiKey: !!process.env.NOTION_API_KEY,
+        notionDbId,
+        notionProjectId: client?.notion_project_id,
+        symphonyLink
+      })
+
+      notionResult = await createNotionPage({
         notionDatabaseId: notionDbId,
         notionProjectId: client.notion_project_id,
         title,
         status: initialStatus,
         requestType: requestType || 'misc',
         clientName: client.name,
-        symphonyLink: `${baseUrl}/portal/${client.access_token}?request=${newRequest.id}`,
+        symphonyLink,
         description,
         priority: nextPriority,
         links: links || [],
@@ -120,7 +122,7 @@ export async function POST(request) {
         extensionHours: 0
       })
 
-      console.log('Notion result:', notionResult)
+      console.log('Notion result:', JSON.stringify(notionResult))
 
       // Store the Notion page ID on the request for future updates
       if (notionResult.success && notionResult.pageId) {
@@ -131,7 +133,7 @@ export async function POST(request) {
       }
     }
 
-    return NextResponse.json({ request: newRequest })
+    return NextResponse.json({ request: newRequest, notionResult })
   } catch (error) {
     console.error('Error creating request:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
