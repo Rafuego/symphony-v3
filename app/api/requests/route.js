@@ -95,6 +95,13 @@ export async function POST(request) {
 
     // Create Notion page — use client-specific DB ID or global default
     const notionDbId = client?.notion_database_id || DEFAULT_NOTION_DATABASE_ID
+    console.log('Notion integration:', {
+      hasApiKey: !!process.env.NOTION_API_KEY,
+      notionDbId,
+      notionProjectId: client?.notion_project_id,
+      clientName: client?.name
+    })
+
     if (notionDbId) {
       const notionResult = await createNotionPage({
         notionDatabaseId: notionDbId,
@@ -112,6 +119,8 @@ export async function POST(request) {
         startedAt,
         extensionHours: 0
       })
+
+      console.log('Notion result:', notionResult)
 
       // Store the Notion page ID on the request for future updates
       if (notionResult.success && notionResult.pageId) {
