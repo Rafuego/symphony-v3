@@ -106,27 +106,32 @@ export async function POST(request) {
         symphonyLink
       })
 
-      notionResult = await createNotionPage({
-        notionDatabaseId: notionDbId,
-        notionProjectId: client.notion_project_id,
-        title,
-        status: initialStatus,
-        requestType: requestType || 'misc',
-        clientName: client.name,
-        symphonyLink,
-        description,
-        priority: nextPriority,
-        links: (links || []).filter(l => l && l.trim()),
-        attachments: attachments || [],
-        createdAt: newRequest.created_at,
-        startedAt,
-        extensionHours: 0
-      })
+      try {
+        notionResult = await createNotionPage({
+          notionDatabaseId: notionDbId,
+          notionProjectId: client.notion_project_id,
+          title,
+          status: initialStatus,
+          requestType: requestType || 'misc',
+          clientName: client.name,
+          symphonyLink,
+          description,
+          priority: nextPriority,
+          links: (links || []).filter(l => l && l.trim()),
+          attachments: attachments || [],
+          createdAt: newRequest.created_at,
+          startedAt,
+          extensionHours: 0
+        })
+      } catch (notionErr) {
+        console.error('Notion createPage threw:', notionErr)
+        notionResult = { success: false, error: notionErr.message || String(notionErr) }
+      }
 
       console.log('Notion result:', JSON.stringify(notionResult))
 
       // Store the Notion page ID on the request for future updates
-      if (notionResult.success && notionResult.pageId) {
+      if (notionResult?.success && notionResult.pageId) {
         await supabase
           .from('requests')
           .update({ notion_page_id: notionResult.pageId })

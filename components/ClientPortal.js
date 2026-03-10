@@ -179,7 +179,13 @@ export default function ClientPortal({ client, onRefresh }) {
       
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      
+
+      // Show Notion sync status for debugging
+      if (data.notionResult && !data.notionResult.success) {
+        console.warn('Notion sync failed:', data.notionResult)
+        alert('Request created! But Notion sync failed: ' + (data.notionResult.error || data.notionResult.reason || 'Unknown error'))
+      }
+
       setNewRequest({ title: '', description: '', requestType: 'misc', links: [''], attachments: [] })
       setShowNewRequest(false)
       onRefresh()
