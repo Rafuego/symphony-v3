@@ -485,10 +485,6 @@ export default function ClientPortal({ client, onRefresh }) {
                   <span className="text-[#8B7355]">✓</span>
                   Slack Channel
                 </li>
-                <li className="flex items-center gap-2 text-sm text-gray-600">
-                  <span className="text-[#8B7355]">✓</span>
-                  Avg. {planConfig[client.plan]?.turnaround || '24-48hr'} turnaround
-                </li>
               </ul>
               <div className="mt-5 pt-5 border-t border-gray-200">
                 <a

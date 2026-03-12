@@ -760,10 +760,6 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
                   <span className="text-[#8B7355]">✓</span>
                   Slack Channel
                 </li>
-                <li className="flex items-center gap-2 text-sm text-gray-600">
-                  <span className="text-[#8B7355]">✓</span>
-                  Avg. {currentPlan.turnaround || '24-48hr'} turnaround
-                </li>
               </ul>
             </div>
           </div>
