@@ -53,8 +53,16 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
     
-    // Generate slug from name
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    // Generate slug from name, with uniqueness suffix if needed
+    let slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    const { data: existing } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('slug', slug)
+      .maybeSingle()
+    if (existing) {
+      slug = `${slug}-${Date.now().toString(36)}`
+    }
     
     // Hash password if provided
     let passwordHash = null

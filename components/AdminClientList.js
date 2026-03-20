@@ -145,8 +145,11 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
     }
   }
 
+  const [converting, setConverting] = useState(null)
+
   const handleConvertDeal = async (deal) => {
     if (!confirm(`Convert "${deal.name}" to an active client?`)) return
+    setConverting(deal.id)
     try {
       const res = await fetch('/api/clients', {
         method: 'POST',
@@ -154,7 +157,7 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
         body: JSON.stringify({
           name: deal.name,
           plan: deal.plan || 'growth',
-          customPlan: deal.estimated_price ? { price: deal.estimated_price } : undefined
+          customPlan: deal.estimated_price ? { price: String(deal.estimated_price) } : undefined
         })
       })
       const data = await res.json()
@@ -168,6 +171,8 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
       setActiveTab('clients')
     } catch (err) {
       alert('Error converting deal: ' + err.message)
+    } finally {
+      setConverting(null)
     }
   }
 
@@ -492,9 +497,10 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                             <div className="flex items-end gap-2">
                               <button
                                 onClick={() => handleConvertDeal(deal)}
-                                className="px-4 py-2 text-sm text-white bg-[#8B7355] hover:bg-[#7A6548] rounded-lg transition-colors"
+                                disabled={converting === deal.id}
+                                className="px-4 py-2 text-sm text-white bg-[#8B7355] hover:bg-[#7A6548] rounded-lg transition-colors disabled:opacity-50"
                               >
-                                Convert to Client
+                                {converting === deal.id ? 'Converting...' : 'Convert to Client'}
                               </button>
                               <button
                                 onClick={() => handleDeleteDeal(deal.id)}
