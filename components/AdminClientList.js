@@ -33,6 +33,7 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
   })
   const [creatingDeal, setCreatingDeal] = useState(false)
   const [editingDeal, setEditingDeal] = useState(null)
+  const [converting, setConverting] = useState(null)
 
   // Fetch unread notification count
   const fetchUnreadCount = async () => {
@@ -144,8 +145,6 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
       alert('Error updating deal: ' + err.message)
     }
   }
-
-  const [converting, setConverting] = useState(null)
 
   const handleConvertDeal = async (deal) => {
     if (!confirm(`Convert "${deal.name}" to an active client?`)) return
@@ -496,14 +495,14 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                             </div>
                             <div className="flex items-end gap-2">
                               <button
-                                onClick={() => handleConvertDeal(deal)}
+                                onMouseDown={(e) => { e.preventDefault(); handleConvertDeal(deal) }}
                                 disabled={converting === deal.id}
                                 className="px-4 py-2 text-sm text-white bg-[#8B7355] hover:bg-[#7A6548] rounded-lg transition-colors disabled:opacity-50"
                               >
                                 {converting === deal.id ? 'Converting...' : 'Convert to Client'}
                               </button>
                               <button
-                                onClick={() => handleDeleteDeal(deal.id)}
+                                onMouseDown={(e) => { e.preventDefault(); handleDeleteDeal(deal.id) }}
                                 className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
                               >
                                 Remove
