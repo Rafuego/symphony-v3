@@ -25,6 +25,9 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
   const [passwordEnabled, setPasswordEnabled] = useState(client.password_enabled)
   const [submitting, setSubmitting] = useState(false)
 
+  // Client name state
+  const [clientName, setClientName] = useState(client.name || '')
+
   // Client tag state
   const [clientTag, setClientTag] = useState(client.client_tag || '')
 
@@ -354,6 +357,32 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
       {showSettings && (
         <div className="bg-white border-b border-gray-200 px-10 py-6">
           <div className="max-w-6xl mx-auto grid grid-cols-4 gap-8">
+            <div>
+              <label className="label">Client Name</label>
+              <input
+                type="text"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                onBlur={async () => {
+                  if (clientName.trim() && clientName !== client.name) {
+                    try {
+                      const res = await fetch(`/api/clients/${client.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: clientName.trim() })
+                      })
+                      const data = await res.json()
+                      if (data.error) throw new Error(data.error)
+                      onRefresh()
+                    } catch (err) {
+                      alert('Error updating name: ' + err.message)
+                      setClientName(client.name)
+                    }
+                  }
+                }}
+                className="input"
+              />
+            </div>
             <div>
               <label className="label">Plan</label>
               <select
