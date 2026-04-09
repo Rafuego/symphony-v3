@@ -662,10 +662,12 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                 { key: 'all', label: 'All' },
                 { key: 'symphony', label: 'Symphony', dot: 'bg-purple-500' },
                 { key: 'project', label: 'Projects', dot: 'bg-blue-500' },
-                { key: 'ended', label: 'Ended', dot: 'bg-gray-400' }
+                { key: 'paused', label: 'Paused', dot: 'bg-amber-400' },
+                { key: 'completed', label: 'Completed', dot: 'bg-gray-400' }
               ].map(filter => {
                 const count = filter.key === 'all' ? clients.length
-                  : filter.key === 'ended' ? clients.filter(c => c.client_status === 'ended').length
+                  : filter.key === 'completed' ? clients.filter(c => c.client_status === 'ended').length
+                  : filter.key === 'paused' ? clients.filter(c => c.client_status === 'paused').length
                   : filter.key === 'symphony' ? clients.filter(c => c.client_tag === 'symphony').length
                   : clients.filter(c => ['project', 'site', 'product'].includes(c.client_tag)).length
                 return (
@@ -693,7 +695,8 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                   if (clientFilter === 'all') return true
                   if (clientFilter === 'symphony') return client.client_tag === 'symphony'
                   if (clientFilter === 'project') return ['project', 'site', 'product'].includes(client.client_tag)
-                  if (clientFilter === 'ended') return client.client_status === 'ended'
+                  if (clientFilter === 'paused') return client.client_status === 'paused'
+                  if (clientFilter === 'completed') return client.client_status === 'ended'
                   return true
                 })
                 .sort((a, b) => {
