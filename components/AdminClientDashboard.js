@@ -151,6 +151,8 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
       if (data.notionResult && !data.notionResult.success) {
         console.warn('Notion sync failed:', data.notionResult)
         alert('Request created! But Notion sync failed: ' + (data.notionResult.error || data.notionResult.reason || 'Unknown error'))
+      } else if (data.notionResult?.templateError) {
+        alert('Request created in Notion, but template failed to load: ' + data.notionResult.templateError)
       }
 
       setNewRequest({ title: '', description: '', requestType: 'misc', links: [''], attachments: [] })
