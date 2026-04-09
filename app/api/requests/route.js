@@ -110,6 +110,7 @@ export async function POST(request) {
         notionResult = await createNotionPage({
           notionDatabaseId: notionDbId,
           notionProjectId: client.notion_project_id,
+          notionTemplateId: client.notion_template_id,
           title,
           status: initialStatus,
           requestType: requestType || 'misc',

@@ -83,6 +83,11 @@ export async function PATCH(request, { params }) {
       updates.notion_project_id = body.notionProjectId || null
     }
 
+    // Handle Notion template page ID (per-client template for new task pages)
+    if (body.notionTemplateId !== undefined) {
+      updates.notion_template_id = body.notionTemplateId || null
+    }
+
     // Handle password updates
     if (body.password !== undefined) {
       if (body.password && body.passwordEnabled) {

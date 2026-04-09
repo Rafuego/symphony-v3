@@ -34,6 +34,7 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
   // Notion integration state
   const [notionDatabaseId, setNotionDatabaseId] = useState(client.notion_database_id || '')
   const [notionProjectId, setNotionProjectId] = useState(client.notion_project_id || '')
+  const [notionTemplateId, setNotionTemplateId] = useState(client.notion_template_id || '')
   const [notionSaving, setNotionSaving] = useState(false)
   const [notionTestResult, setNotionTestResult] = useState(null)
 
@@ -192,7 +193,8 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           notionDatabaseId: notionDatabaseId || '24e866d074498154a2a2ca1cd1768b41',
-          notionProjectId: notionProjectId.trim() || null
+          notionProjectId: notionProjectId.trim() || null,
+          notionTemplateId: notionTemplateId.trim() || null
         })
       })
       const data = await res.json()
@@ -479,7 +481,7 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
             </div>
 
             {/* Client Project Page ID */}
-            <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
+            <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="label">Client Project Page ID (Optional)</label>
                 <input
@@ -490,17 +492,30 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
                   className="input"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  Links this client to their project in the Notion Projects database. Open the client's project page in Notion, copy the page ID from the URL. This fills the "Client" relation column.
+                  Links this client to their project in the Notion Projects database. Fills the "Client" relation column.
                 </p>
               </div>
-              <button
-                onClick={handleSaveNotion}
-                disabled={notionSaving}
-                className="btn-accent text-sm"
-              >
-                {notionSaving ? 'Saving...' : 'Save'}
-              </button>
+              <div>
+                <label className="label">Template Page ID (Optional)</label>
+                <input
+                  type="text"
+                  value={notionTemplateId}
+                  onChange={(e) => setNotionTemplateId(e.target.value)}
+                  placeholder="e.g., 269866d07449808e9370f201b9cc1fd1"
+                  className="input"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Copy the template page ID from its Notion URL. New tasks will include this template's content.
+                </p>
+              </div>
             </div>
+            <button
+              onClick={handleSaveNotion}
+              disabled={notionSaving}
+              className="btn-accent text-sm"
+            >
+              {notionSaving ? 'Saving...' : 'Save Notion Settings'}
+            </button>
           </div>
 
           {/* Danger Zone */}

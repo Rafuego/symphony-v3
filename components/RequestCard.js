@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { statusConfig, requestTypes } from '@/lib/supabase'
 import { uploadFile } from '@/lib/uploadFile'
-import { getBusinessHoursRemaining, renderMarkdown } from '@/lib/utils'
+import { renderMarkdown } from '@/lib/utils'
 
 export default function RequestCard({ 
   request, 
@@ -18,11 +18,6 @@ export default function RequestCard({
   const [newFile, setNewFile] = useState({ name: '', url: '', type: 'figma' })
   const [editingNotes, setEditingNotes] = useState(false)
   const [notes, setNotes] = useState(request.admin_notes || '')
-  const [showExtension, setShowExtension] = useState(false)
-  const [extensionNote, setExtensionNote] = useState('')
-  const [extensionHours, setExtensionHours] = useState(24)
-  const [now, setNow] = useState(new Date())
-  
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false)
   const [editData, setEditData] = useState({
@@ -41,11 +36,6 @@ export default function RequestCard({
   const [showAddDeliverable, setShowAddDeliverable] = useState(false)
   const [uploadingDeliverable, setUploadingDeliverable] = useState(false)
 
-  useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 60000)
-    return () => clearInterval(interval)
-  }, [])
-
   // Reset edit data when request changes
   useEffect(() => {
     setEditData({
@@ -62,20 +52,6 @@ export default function RequestCard({
   const isFirstInQueue = queuePosition === 1
   const isLastInQueue = queuePosition === totalQueued
 
-  // Calculate 48hr timer (plus any extensions) - skips weekends
-  const getTimeRemaining = () => {
-    if (!request.started_at) return null
-    
-    const baseHours = 48
-    const extendedHours = request.extension_hours || 0
-    const totalHours = baseHours + extendedHours
-    
-    return getBusinessHoursRemaining(request.started_at, totalHours, now)
-  }
-
-  const timeRemaining = getTimeRemaining()
-  const showTimer = request.status === 'in-progress' && timeRemaining
-  const showPausedTimer = request.status === 'in-review' && timeRemaining
 
   const handleStatusChange = async (newStatus) => {
     try {
@@ -133,25 +109,6 @@ export default function RequestCard({
     }
   }
 
-  const handleExtensionRequest = async () => {
-    try {
-      await fetch(`/api/requests/${request.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          extensionRequested: true, 
-          extensionNote,
-          extensionHours: (request.extension_hours || 0) + extensionHours
-        })
-      })
-      setShowExtension(false)
-      setExtensionNote('')
-      setExtensionHours(24)
-      onRefresh()
-    } catch (err) {
-      alert('Error requesting extension: ' + err.message)
-    }
-  }
 
   const handleDeleteRequest = async () => {
     setDeleting(true)
@@ -297,25 +254,6 @@ export default function RequestCard({
   }
 
   // Reset timer (restarts the 48hr clock)
-  const handleResetTimer = async () => {
-    if (!confirm('Reset the timer? This will restart the 48hr clock from now and clear any extensions.')) return
-    
-    try {
-      await fetch(`/api/requests/${request.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          started_at: new Date().toISOString(),
-          extension_hours: 0,
-          extension_note: null,
-          extension_requested: false
-        })
-      })
-      onRefresh()
-    } catch (err) {
-      alert('Error resetting timer: ' + err.message)
-    }
-  }
 
   // Edit Mode UI
   if (isEditing) {
@@ -514,11 +452,6 @@ export default function RequestCard({
                   Up Next
                 </span>
               )}
-              {request.extension_requested && (
-                <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs font-semibold uppercase rounded">
-                  Extended
-                </span>
-              )}
             </div>
             <p 
               className="text-sm text-gray-600"
@@ -563,123 +496,6 @@ export default function RequestCard({
           </select>
         </div>
       </div>
-
-      {/* 48hr Timer - Active */}
-      {showTimer && (
-        <div className={`rounded-lg p-3 mb-4 ${timeRemaining.expired ? 'bg-red-50' : 'bg-emerald-50'}`}>
-          <div className="flex justify-between items-center mb-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span>{timeRemaining.expired ? '⚠️' : '⏱️'}</span>
-              <span className={`text-sm font-semibold ${timeRemaining.expired ? 'text-red-600' : 'text-emerald-600'}`}>
-                {timeRemaining.expired 
-                  ? 'Deadline Passed' 
-                  : `${timeRemaining.hours}h ${timeRemaining.minutes}m remaining`}
-              </span>
-              <span className="text-xs text-gray-400">(business hours)</span>
-              {request.extension_hours > 0 && (
-                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded">
-                  +{request.extension_hours}h extended
-                </span>
-              )}
-            </div>
-            <div className="flex gap-2">
-              {isAdmin && (
-                <button
-                  onClick={handleResetTimer}
-                  className="px-3 py-1 text-xs border border-gray-300 rounded text-gray-600 hover:bg-white"
-                >
-                  Reset Timer
-                </button>
-              )}
-              <button
-                onClick={() => setShowExtension(true)}
-                className="px-3 py-1 text-xs border border-gray-300 rounded text-gray-600 hover:bg-white"
-              >
-                {request.extension_hours > 0 ? 'Add More Time' : (isAdmin ? 'Add Extension' : 'Request Extension')}
-              </button>
-            </div>
-          </div>
-          <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
-            <div 
-              className={`h-full rounded-full ${timeRemaining.percentRemaining < 25 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-              style={{ width: `${Math.min(timeRemaining.percentRemaining, 100)}%` }}
-            />
-          </div>
-          {request.extension_note && (
-            <p className="text-xs text-gray-600 mt-2 italic">Extension note: {request.extension_note}</p>
-          )}
-        </div>
-      )}
-
-      {/* Timer Paused - In Review */}
-      {showPausedTimer && (
-        <div className="rounded-lg p-3 mb-4 bg-amber-50">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <span>⏸️</span>
-              <span className="text-sm font-semibold text-amber-600">
-                Timer paused — In Review
-              </span>
-              <span className="text-xs text-gray-400">
-                ({timeRemaining.hours}h {timeRemaining.minutes}m will resume when back to In Progress)
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Extension Modal */}
-      {showExtension && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
-            <h3 className="font-serif text-xl mb-4">{isAdmin ? 'Add Extension' : 'Request Extension'}</h3>
-            
-            <div className="mb-4">
-              <label className="label">Extension Time</label>
-              <div className="flex gap-2 items-center">
-                <select
-                  value={extensionHours}
-                  onChange={(e) => setExtensionHours(parseInt(e.target.value))}
-                  className="input flex-1"
-                >
-                  <option value={6}>6 hours</option>
-                  <option value={12}>12 hours</option>
-                  <option value={24}>24 hours (1 day)</option>
-                  <option value={48}>48 hours (2 days)</option>
-                  <option value={72}>72 hours (3 days)</option>
-                  <option value={96}>96 hours (4 days)</option>
-                  <option value={120}>120 hours (5 days)</option>
-                </select>
-              </div>
-              {request.extension_hours > 0 && (
-                <p className="text-xs text-gray-500 mt-2">
-                  Already extended by {request.extension_hours}h — this will add {extensionHours}h more
-                </p>
-              )}
-            </div>
-            
-            <div className="mb-4">
-              <label className="label">Reason for Extension</label>
-              <textarea
-                value={extensionNote}
-                onChange={(e) => setExtensionNote(e.target.value)}
-                placeholder="Explain why more time is needed..."
-                rows={3}
-                className="input"
-              />
-            </div>
-            
-            <div className="flex gap-3">
-              <button onClick={handleExtensionRequest} className="btn-primary flex-1">
-                {isAdmin ? `Add +${extensionHours}h Extension` : `Request +${extensionHours}h`}
-              </button>
-              <button onClick={() => { setShowExtension(false); setExtensionHours(24); setExtensionNote(''); }} className="btn-secondary">
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
