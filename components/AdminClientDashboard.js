@@ -360,7 +360,7 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
       {/* Settings Panel */}
       {showSettings && (
         <div className="bg-white border-b border-gray-200 px-10 py-6">
-          <div className="max-w-6xl mx-auto grid grid-cols-3 gap-6 mb-6">
+          <div className="max-w-6xl mx-auto grid grid-cols-4 gap-8">
             <div>
               <label className="label">Client Name</label>
               <input
@@ -429,36 +429,7 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
               >
                 <option value="">No tag</option>
                 <option value="symphony">Symphony</option>
-                <option value="project">Project</option>
-                <option value="site">Site</option>
-                <option value="product">Product</option>
                 <option value="legacy_drip">Legacy Drip</option>
-              </select>
-            </div>
-            <div>
-              <label className="label">Client Status</label>
-              <select
-                value={client.client_status || 'active'}
-                onChange={async (e) => {
-                  const newStatus = e.target.value
-                  try {
-                    const res = await fetch(`/api/clients/${client.id}`, {
-                      method: 'PATCH',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ clientStatus: newStatus === 'active' ? null : newStatus })
-                    })
-                    const data = await res.json()
-                    if (data.error) throw new Error(data.error)
-                    onRefresh()
-                  } catch (err) {
-                    alert('Error saving status: ' + err.message)
-                  }
-                }}
-                className="input"
-              >
-                <option value="active">Active</option>
-                <option value="paused">Paused</option>
-                <option value="ended">Ended</option>
               </select>
             </div>
             <div>

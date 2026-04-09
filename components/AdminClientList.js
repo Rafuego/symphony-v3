@@ -11,25 +11,8 @@ const dealStages = {
   verbal: { label: 'Verbal', color: 'bg-green-100 text-green-700' }
 }
 
-// Client type tag config with colors
-const clientTagConfig = {
-  symphony: { label: 'Symphony', color: 'bg-purple-100 text-purple-700', dot: 'bg-purple-500' },
-  project: { label: 'Project', color: 'bg-blue-100 text-blue-700', dot: 'bg-blue-500' },
-  site: { label: 'Site', color: 'bg-teal-100 text-teal-700', dot: 'bg-teal-500' },
-  product: { label: 'Product', color: 'bg-indigo-100 text-indigo-700', dot: 'bg-indigo-500' },
-  legacy_drip: { label: 'Legacy Drip', color: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500' }
-}
-
-// Client status config
-const clientStatusConfig = {
-  active: { label: 'Active', color: 'bg-green-100 text-green-700', dot: 'bg-green-500' },
-  paused: { label: 'Paused', color: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500' },
-  ended: { label: 'Ended', color: 'bg-gray-100 text-gray-500', dot: 'bg-gray-400' }
-}
-
 export default function AdminClientList({ clients, onSelectClient, onRefresh }) {
   const [activeTab, setActiveTab] = useState('clients')
-  const [clientFilter, setClientFilter] = useState('all')
   const [showNewClient, setShowNewClient] = useState(false)
   const [newClient, setNewClient] = useState({
     name: '',
@@ -656,108 +639,70 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
               </div>
             )}
 
-            {/* Client Filter Tabs */}
-            <div className="flex gap-2 mb-6 flex-wrap">
-              {[
-                { key: 'all', label: 'All' },
-                { key: 'symphony', label: 'Symphony', dot: 'bg-purple-500' },
-                { key: 'project', label: 'Projects', dot: 'bg-blue-500' },
-                { key: 'ended', label: 'Ended', dot: 'bg-gray-400' }
-              ].map(filter => {
-                const count = filter.key === 'all' ? clients.length
-                  : filter.key === 'ended' ? clients.filter(c => c.client_status === 'ended').length
-                  : filter.key === 'symphony' ? clients.filter(c => c.client_tag === 'symphony').length
-                  : clients.filter(c => ['project', 'site', 'product'].includes(c.client_tag)).length
-                return (
-                  <button
-                    key={filter.key}
-                    onClick={() => setClientFilter(filter.key)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-                      clientFilter === filter.key
-                        ? 'bg-white shadow-sm border border-gray-200 text-gray-900'
-                        : 'bg-transparent text-gray-500 hover:text-gray-700 hover:bg-white/50'
-                    }`}
-                  >
-                    {filter.dot && <span className={`w-2 h-2 rounded-full ${filter.dot}`} />}
-                    {filter.label}
-                    <span className="text-xs text-gray-400">{count}</span>
-                  </button>
-                )
-              })}
-            </div>
-
             {/* Client List */}
             <div className="space-y-3">
-              {[...clients]
-                .filter(client => {
-                  if (clientFilter === 'all') return true
-                  if (clientFilter === 'symphony') return client.client_tag === 'symphony'
-                  if (clientFilter === 'project') return ['project', 'site', 'product'].includes(client.client_tag)
-                  if (clientFilter === 'ended') return client.client_status === 'ended'
-                  return true
-                })
-                .sort((a, b) => {
-                  // Active clients first, ended last
-                  const statusOrder = { active: 0, paused: 1, '': 1, ended: 2 }
-                  const aStatus = statusOrder[a.client_status || ''] ?? 1
-                  const bStatus = statusOrder[b.client_status || ''] ?? 1
-                  if (aStatus !== bStatus) return aStatus - bStatus
-                  // Then by tag
-                  const tagOrder = { symphony: 0, project: 1, site: 1, product: 1, '': 2, legacy_drip: 3 }
-                  const aTag = tagOrder[a.client_tag || ''] ?? 2
-                  const bTag = tagOrder[b.client_tag || ''] ?? 2
-                  if (aTag !== bTag) return aTag - bTag
-                  return (a.name || '').localeCompare(b.name || '')
-                })
-                .map(client => {
+              {[...clients].sort((a, b) => {
+                const tagOrder = { symphony: 0, '': 1, legacy_drip: 2 }
+                const aOrder = tagOrder[a.client_tag || ''] ?? 1
+                const bOrder = tagOrder[b.client_tag || ''] ?? 1
+                if (aOrder !== bOrder) return aOrder - bOrder
+                return (a.name || '').localeCompare(b.name || '')
+              }).map(client => {
                 const plan = planConfig[client.plan]
                 const clientPrice = client.custom_price || plan?.defaultPrice
-                const tag = clientTagConfig[client.client_tag]
-                const status = clientStatusConfig[client.client_status]
-                const isEnded = client.client_status === 'ended'
                 return (
                   <div
                     key={client.id}
-                    className={`card flex items-center gap-5 hover:shadow-md transition-shadow ${isEnded ? 'opacity-60' : ''}`}
+                    className="card flex items-center gap-5 hover:shadow-md transition-shadow"
                   >
                     <div
                       className="flex items-center gap-5 flex-1 cursor-pointer"
                       onClick={() => onSelectClient(client.id)}
                     >
-                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl ${isEnded ? 'bg-gray-50' : 'bg-gray-100'}`}>
+                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
                         {client.logo}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className={`font-serif text-lg ${isEnded ? 'text-gray-400' : 'text-gray-900'}`}>{client.name}</h3>
+                          <h3 className="font-serif text-lg text-gray-900">{client.name}</h3>
                           {client.password_enabled && (
                             <span title="Password protected">🔒</span>
                           )}
-                          {tag && (
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${tag.color}`}>
-                              {tag.label}
-                            </span>
-                          )}
-                          {status && (
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${status.color}`}>
-                              {status.label}
+                          {client.client_tag && (
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                              client.client_tag === 'symphony'
+                                ? 'bg-purple-100 text-purple-700'
+                                : 'bg-amber-100 text-amber-700'
+                            }`}>
+                              {client.client_tag === 'symphony' ? 'Symphony' : 'Legacy Drip'}
                             </span>
                           )}
                         </div>
                         <div className="text-sm text-gray-500 flex items-center gap-2">
                           <span>{client.activeCount} active • {client.queuedCount} queued</span>
+                          <span className="text-xs">•</span>
+                          {client.notion_project_id ? (
+                            <span className="text-xs text-green-600 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block" />
+                              Notion configured
+                            </span>
+                          ) : (
+                            <span className="text-xs text-amber-500 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 bg-amber-400 rounded-full inline-block" />
+                              No project ID
+                            </span>
+                          )}
                         </div>
                       </div>
                       {clientPrice && (
                         <div className="text-right mr-2">
-                          <div className={`text-lg font-semibold ${isEnded ? 'text-gray-400' : 'text-gray-900'}`}>
+                          <div className="text-lg font-semibold text-gray-900">
                             ${parseInt(clientPrice).toLocaleString()}
                           </div>
                           <div className="text-xs text-gray-400">/month</div>
                         </div>
                       )}
                       <div className={`px-3 py-1.5 rounded text-xs font-semibold uppercase ${
-                        isEnded ? 'bg-gray-200 text-gray-500' :
                         client.plan === 'scale' ? 'bg-gray-900 text-white' : 'bg-[#8B7355] text-white'
                       }`}>
                         {plan?.name}
@@ -770,7 +715,7 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                       }}
                       className="px-3 py-2 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200"
                     >
-                      🔗
+                      🔗 Copy Link
                     </button>
                     <div
                       className="text-gray-400 cursor-pointer"
