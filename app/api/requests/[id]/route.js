@@ -50,6 +50,7 @@ export async function PATCH(request, { params }) {
     if (body.links !== undefined) updates.links = body.links
     if (body.attachments !== undefined) updates.attachments = body.attachments
     if (body.deliverables !== undefined) updates.deliverables = body.deliverables
+    if (body.requestedDueDate !== undefined) updates.requested_due_date = body.requestedDueDate || null
     
     const { data: updatedRequest, error } = await supabase
       .from('requests')
@@ -74,6 +75,7 @@ export async function PATCH(request, { params }) {
       }
       if (updates.started_at !== undefined) notionUpdates.startedAt = updates.started_at
       if (updates.completed_at !== undefined) notionUpdates.completedAt = updates.completed_at
+      if (updates.requested_due_date !== undefined) notionUpdates.requestedDueDate = updates.requested_due_date
 
       // If title changed, look up client name for "ClientName: Title" format
       if (body.title !== undefined) {

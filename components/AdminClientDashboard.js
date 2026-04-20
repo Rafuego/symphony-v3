@@ -11,12 +11,13 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
   const [showNewRequest, setShowNewRequest] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showPlanModal, setShowPlanModal] = useState(false)
-  const [newRequest, setNewRequest] = useState({ 
-    title: '', 
-    description: '', 
+  const [newRequest, setNewRequest] = useState({
+    title: '',
+    description: '',
     requestType: 'misc',
     links: [''],
-    attachments: []
+    attachments: [],
+    requestedDueDate: ''
   })
   const [uploading, setUploading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -140,7 +141,8 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
           description: newRequest.description,
           requestType: newRequest.requestType,
           links: filteredLinks,
-          attachments: newRequest.attachments
+          attachments: newRequest.attachments,
+          requestedDueDate: newRequest.requestedDueDate || null
         })
       })
       
@@ -155,7 +157,7 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
         alert('Request created in Notion, but template failed to load: ' + data.notionResult.templateError)
       }
 
-      setNewRequest({ title: '', description: '', requestType: 'misc', links: [''], attachments: [] })
+      setNewRequest({ title: '', description: '', requestType: 'misc', links: [''], attachments: [], requestedDueDate: '' })
       setShowNewRequest(false)
       onRefresh()
     } catch (err) {
@@ -664,6 +666,17 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
                     </label>
                   )}
                   <p className="text-xs text-gray-400 mt-2">All file types supported (max 25MB each)</p>
+                </div>
+                <div className="mb-5">
+                  <label className="label">Tentative Due Date (Optional)</label>
+                  <input
+                    type="date"
+                    value={newRequest.requestedDueDate}
+                    onChange={(e) => setNewRequest({ ...newRequest, requestedDueDate: e.target.value })}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="input"
+                  />
+                  <p className="text-xs text-gray-400 mt-2">Target delivery date — syncs to Notion Timeline.</p>
                 </div>
                 <div className="flex gap-3">
                   <button onClick={handleSubmitRequest} disabled={submitting || uploading} className="btn-primary">

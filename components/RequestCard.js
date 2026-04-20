@@ -25,7 +25,8 @@ export default function RequestCard({
     description: request.description || '',
     requestType: request.request_type || 'misc',
     links: request.links?.length > 0 ? request.links : [''],
-    attachments: request.attachments || []
+    attachments: request.attachments || [],
+    requestedDueDate: request.requested_due_date || ''
   })
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -43,7 +44,8 @@ export default function RequestCard({
       description: request.description || '',
       requestType: request.request_type || 'misc',
       links: request.links?.length > 0 ? request.links : [''],
-      attachments: request.attachments || []
+      attachments: request.attachments || [],
+      requestedDueDate: request.requested_due_date || ''
     })
   }, [request])
 
@@ -182,7 +184,8 @@ export default function RequestCard({
           description: editData.description,
           requestType: editData.requestType,
           links: filteredLinks,
-          attachments: editData.attachments
+          attachments: editData.attachments,
+          requestedDueDate: editData.requestedDueDate || null
         })
       })
       
@@ -204,7 +207,8 @@ export default function RequestCard({
       description: request.description || '',
       requestType: request.request_type || 'misc',
       links: request.links?.length > 0 ? request.links : [''],
-      attachments: request.attachments || []
+      attachments: request.attachments || [],
+      requestedDueDate: request.requested_due_date || ''
     })
     setIsEditing(false)
   }
@@ -395,7 +399,18 @@ export default function RequestCard({
           )}
           <p className="text-xs text-gray-400 mt-2">All file types supported (max 25MB each)</p>
         </div>
-        
+
+        <div className="mb-5">
+          <label className="label">Tentative Due Date</label>
+          <input
+            type="date"
+            value={editData.requestedDueDate}
+            onChange={(e) => setEditData({ ...editData, requestedDueDate: e.target.value })}
+            className="input"
+          />
+          <p className="text-xs text-gray-400 mt-2">Target delivery date — syncs to Notion Timeline.</p>
+        </div>
+
         <div className="flex gap-3 pt-4 border-t border-gray-100">
           <button onClick={handleSaveEdit} disabled={saving || uploading} className="btn-primary">
             {saving ? 'Saving...' : 'Save Changes'}
@@ -452,8 +467,35 @@ export default function RequestCard({
                   Up Next
                 </span>
               )}
+              {request.requested_due_date && (() => {
+                const due = new Date(request.requested_due_date + 'T23:59:59')
+                const today = new Date()
+                const daysLeft = Math.ceil((due - today) / (1000 * 60 * 60 * 24))
+                const isCompleted = request.status === 'completed'
+                const isOverdue = !isCompleted && daysLeft < 0
+                const isSoon = !isCompleted && daysLeft >= 0 && daysLeft <= 2
+                const label = isCompleted
+                  ? `Due ${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                  : isOverdue
+                    ? `Overdue by ${Math.abs(daysLeft)}d`
+                    : daysLeft === 0
+                      ? 'Due today'
+                      : `Due in ${daysLeft}d`
+                const color = isCompleted
+                  ? 'bg-gray-100 text-gray-500'
+                  : isOverdue
+                    ? 'bg-red-100 text-red-700'
+                    : isSoon
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-blue-100 text-blue-700'
+                return (
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded flex items-center gap-1 ${color}`}>
+                    📅 {label}
+                  </span>
+                )
+              })()}
             </div>
-            <p 
+            <p
               className="text-sm text-gray-600"
               dangerouslySetInnerHTML={{ __html: renderMarkdown(request.description) }}
             />
