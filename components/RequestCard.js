@@ -426,8 +426,8 @@ export default function RequestCard({
   // Normal View Mode
   return (
     <div className={`card ${showPriorityControls && isFirstInQueue ? 'ring-2 ring-[#8B7355]' : ''}`}>
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex gap-4 flex-1">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
+        <div className="flex gap-4 flex-1 min-w-0">
           {/* Priority Controls */}
           {showPriorityControls && (
             <div className="flex flex-col items-center gap-1 pr-4 border-r border-gray-200">
@@ -503,7 +503,7 @@ export default function RequestCard({
         </div>
 
         {/* Status & Actions */}
-        <div className="ml-4 flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap sm:ml-4">
           <button
             onClick={() => setIsEditing(true)}
             className="p-2 text-sm text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"

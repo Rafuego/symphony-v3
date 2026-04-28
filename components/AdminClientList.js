@@ -13,6 +13,7 @@ const dealStages = {
 
 export default function AdminClientList({ clients, onSelectClient, onRefresh }) {
   const [activeTab, setActiveTab] = useState('clients')
+  const [viewMode, setViewMode] = useState('detailed') // 'detailed' | 'compact' | 'grid'
   const [showNewClient, setShowNewClient] = useState(false)
   const [newClient, setNewClient] = useState({
     name: '',
@@ -199,27 +200,27 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
       <div className="h-1.5 bg-[#8B7355]" />
 
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-10 py-5">
-        <div className="flex items-center justify-between max-w-6xl mx-auto">
-          <div className="flex items-center gap-3">
-            <h1 className="font-serif text-2xl font-normal text-gray-900">Symphony</h1>
-            <span className="text-xs text-[#8B7355] font-medium uppercase tracking-wider">
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-10 py-4 sm:py-5">
+        <div className="flex items-center justify-between max-w-6xl mx-auto gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <h1 className="font-serif text-xl sm:text-2xl font-normal text-gray-900 truncate">Symphony</h1>
+            <span className="text-xs text-[#8B7355] font-medium uppercase tracking-wider hidden sm:inline">
               Admin Console
             </span>
           </div>
           <a
             href="/demo"
             target="_blank"
-            className="px-4 py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-sm font-medium hover:bg-amber-100 transition-colors"
+            className="px-3 sm:px-4 py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs sm:text-sm font-medium hover:bg-amber-100 transition-colors whitespace-nowrap"
           >
-            Demo Environment
+            Demo
           </a>
         </div>
       </header>
 
       {/* Tabs */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-10">
+      <div className="bg-white border-b border-gray-200 overflow-x-auto">
+        <div className="max-w-4xl mx-auto px-4 sm:px-10">
           <div className="flex gap-1">
             <button
               onClick={() => setActiveTab('clients')}
@@ -281,7 +282,7 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
       </div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-10 py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-10 py-6 sm:py-10">
         {activeTab === 'alerts' ? (
           <AlertsPanel onSelectClient={(clientId) => {
             onSelectClient(clientId)
@@ -306,7 +307,7 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
             {showNewDeal && (
               <div className="card mb-6">
                 <h3 className="font-serif text-xl mb-5">Add Pending Deal</h3>
-                <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="label">Company Name</label>
                     <input
@@ -331,7 +332,7 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                     </select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="label">Contact Name</label>
                     <input
@@ -353,7 +354,7 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="label">Likely Plan</label>
                     <select
@@ -653,23 +654,47 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
         ) : (
           /* ===== CLIENTS TAB ===== */
           <>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
               <h2 className="font-serif text-2xl font-normal text-gray-900">
                 Client Accounts
               </h2>
-              <button
-                onClick={() => setShowNewClient(true)}
-                className="btn-primary"
-              >
-                + New Client
-              </button>
+              <div className="flex items-center gap-2">
+                {/* View Toggle */}
+                <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                  {[
+                    { key: 'detailed', label: 'Detailed', icon: '☰' },
+                    { key: 'compact', label: 'Compact', icon: '≡' },
+                    { key: 'grid', label: 'Grid', icon: '▦' }
+                  ].map(v => (
+                    <button
+                      key={v.key}
+                      onClick={() => setViewMode(v.key)}
+                      title={v.label}
+                      className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                        viewMode === v.key
+                          ? 'bg-white shadow-sm text-gray-900'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      <span className="mr-1">{v.icon}</span>
+                      <span className="hidden sm:inline">{v.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setShowNewClient(true)}
+                  className="btn-primary"
+                >
+                  + New Client
+                </button>
+              </div>
             </div>
 
             {/* New Client Form */}
             {showNewClient && (
               <div className="card mb-6">
                 <h3 className="font-serif text-xl mb-5">Create New Client</h3>
-                <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="label">Client Name</label>
                     <input
@@ -693,7 +718,7 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                     </select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 mb-5 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5 items-end">
                   <div>
                     <label className="label">Access Password (optional)</label>
                     <input
@@ -728,102 +753,241 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
             )}
 
             {/* Client List */}
-            <div className="space-y-3">
-              {[...clients]
+            {(() => {
+              const sortedClients = [...clients]
                 .filter(c => c.client_status !== 'paused')
                 .sort((a, b) => {
-                const tagOrder = { symphony: 0, '': 1, legacy_drip: 2 }
-                const aOrder = tagOrder[a.client_tag || ''] ?? 1
-                const bOrder = tagOrder[b.client_tag || ''] ?? 1
-                if (aOrder !== bOrder) return aOrder - bOrder
-                return (a.name || '').localeCompare(b.name || '')
-              }).map(client => {
-                const plan = planConfig[client.plan]
-                const clientPrice = client.custom_price || plan?.defaultPrice
+                  const tagOrder = { symphony: 0, '': 1, legacy_drip: 2 }
+                  const aOrder = tagOrder[a.client_tag || ''] ?? 1
+                  const bOrder = tagOrder[b.client_tag || ''] ?? 1
+                  if (aOrder !== bOrder) return aOrder - bOrder
+                  return (a.name || '').localeCompare(b.name || '')
+                })
+
+              if (sortedClients.length === 0) {
                 return (
-                  <div
-                    key={client.id}
-                    className="card flex items-center gap-5 hover:shadow-md transition-shadow"
-                  >
-                    <div
-                      className="flex items-center gap-5 flex-1 cursor-pointer"
-                      onClick={() => onSelectClient(client.id)}
-                    >
-                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
-                        {client.logo}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-serif text-lg text-gray-900">{client.name}</h3>
-                          {client.password_enabled && (
-                            <span title="Password protected">🔒</span>
-                          )}
-                          {client.client_tag && (
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                              client.client_tag === 'symphony'
-                                ? 'bg-purple-100 text-purple-700'
-                                : 'bg-amber-100 text-amber-700'
-                            }`}>
-                              {client.client_tag === 'symphony' ? 'Symphony' : 'Legacy Drip'}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-sm text-gray-500 flex items-center gap-2">
-                          <span>{client.activeCount} active • {client.queuedCount} queued</span>
-                          <span className="text-xs">•</span>
-                          {client.notion_project_id ? (
-                            <span className="text-xs text-green-600 flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block" />
-                              Notion configured
-                            </span>
-                          ) : (
-                            <span className="text-xs text-amber-500 flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 bg-amber-400 rounded-full inline-block" />
-                              No project ID
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {clientPrice && (
-                        <div className="text-right mr-2">
-                          <div className="text-lg font-semibold text-gray-900">
-                            ${parseInt(clientPrice).toLocaleString()}
-                          </div>
-                          <div className="text-xs text-gray-400">/month</div>
-                        </div>
-                      )}
-                      <div className={`px-3 py-1.5 rounded text-xs font-semibold uppercase ${
-                        client.plan === 'scale' ? 'bg-gray-900 text-white' : 'bg-[#8B7355] text-white'
-                      }`}>
-                        {plan?.name}
-                      </div>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        copyClientLink(client)
-                      }}
-                      className="px-3 py-2 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200"
-                    >
-                      🔗 Copy Link
-                    </button>
-                    <div
-                      className="text-gray-400 cursor-pointer"
-                      onClick={() => onSelectClient(client.id)}
-                    >
-                      →
-                    </div>
+                  <div className="card text-center py-12">
+                    <div className="text-5xl mb-4 opacity-50">📋</div>
+                    <p className="text-gray-500">No active clients. Create one or check the Paused tab.</p>
                   </div>
                 )
-              })}
+              }
 
-              {clients.filter(c => c.client_status !== 'paused').length === 0 && (
-                <div className="card text-center py-12">
-                  <div className="text-5xl mb-4 opacity-50">📋</div>
-                  <p className="text-gray-500">No active clients. Create one or check the Paused tab.</p>
+              // GRID VIEW
+              if (viewMode === 'grid') {
+                return (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {sortedClients.map(client => {
+                      const plan = planConfig[client.plan]
+                      const clientPrice = client.custom_price || plan?.defaultPrice
+                      return (
+                        <div
+                          key={client.id}
+                          onClick={() => onSelectClient(client.id)}
+                          className="card cursor-pointer hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-xl">
+                              {client.logo}
+                            </div>
+                            <div className={`px-2 py-1 rounded text-xs font-semibold uppercase ${
+                              client.plan === 'scale' ? 'bg-gray-900 text-white' : 'bg-[#8B7355] text-white'
+                            }`}>
+                              {plan?.name}
+                            </div>
+                          </div>
+                          <h3 className="font-serif text-lg text-gray-900 mb-1 truncate">{client.name}</h3>
+                          <div className="flex items-center gap-1 mb-3 flex-wrap">
+                            {client.password_enabled && <span className="text-xs">🔒</span>}
+                            {client.client_tag && (
+                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                client.client_tag === 'symphony'
+                                  ? 'bg-purple-100 text-purple-700'
+                                  : 'bg-amber-100 text-amber-700'
+                              }`}>
+                                {client.client_tag === 'symphony' ? 'Symphony' : 'Legacy Drip'}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500 mb-3">
+                            {client.activeCount} active • {client.queuedCount} queued
+                          </div>
+                          {clientPrice && (
+                            <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
+                              <div>
+                                <div className="text-lg font-semibold text-gray-900">
+                                  ${parseInt(clientPrice).toLocaleString()}
+                                </div>
+                                <div className="text-xs text-gray-400">/month</div>
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  copyClientLink(client)
+                                }}
+                                className="text-gray-400 hover:text-gray-600"
+                                title="Copy portal link"
+                              >
+                                🔗
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              }
+
+              // COMPACT VIEW
+              if (viewMode === 'compact') {
+                return (
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    {sortedClients.map((client, idx) => {
+                      const plan = planConfig[client.plan]
+                      const clientPrice = client.custom_price || plan?.defaultPrice
+                      return (
+                        <div
+                          key={client.id}
+                          onClick={() => onSelectClient(client.id)}
+                          className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                            idx > 0 ? 'border-t border-gray-100' : ''
+                          }`}
+                        >
+                          <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center text-base flex-shrink-0">
+                            {client.logo}
+                          </div>
+                          <div className="flex-1 min-w-0 flex items-center gap-2">
+                            <h3 className="font-medium text-gray-900 truncate">{client.name}</h3>
+                            {client.password_enabled && <span className="text-xs flex-shrink-0">🔒</span>}
+                            {client.client_tag && (
+                              <span className={`px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 ${
+                                client.client_tag === 'symphony'
+                                  ? 'bg-purple-100 text-purple-700'
+                                  : 'bg-amber-100 text-amber-700'
+                              }`}>
+                                {client.client_tag === 'symphony' ? 'Symphony' : 'Legacy'}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500 hidden sm:block flex-shrink-0">
+                            {client.activeCount}a · {client.queuedCount}q
+                          </div>
+                          {clientPrice && (
+                            <div className="text-sm font-semibold text-gray-900 flex-shrink-0">
+                              ${parseInt(clientPrice).toLocaleString()}
+                            </div>
+                          )}
+                          <div className={`px-2 py-0.5 rounded text-xs font-semibold uppercase flex-shrink-0 ${
+                            client.plan === 'scale' ? 'bg-gray-900 text-white' : 'bg-[#8B7355] text-white'
+                          }`}>
+                            {plan?.name}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              copyClientLink(client)
+                            }}
+                            className="text-gray-400 hover:text-gray-600 text-sm flex-shrink-0"
+                            title="Copy portal link"
+                          >
+                            🔗
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              }
+
+              // DETAILED VIEW (default)
+              return (
+                <div className="space-y-3">
+                  {sortedClients.map(client => {
+                    const plan = planConfig[client.plan]
+                    const clientPrice = client.custom_price || plan?.defaultPrice
+                    return (
+                      <div
+                        key={client.id}
+                        className="card flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5 hover:shadow-md transition-shadow"
+                      >
+                        <div
+                          className="flex items-center gap-4 sm:gap-5 flex-1 cursor-pointer min-w-0"
+                          onClick={() => onSelectClient(client.id)}
+                        >
+                          <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl flex-shrink-0">
+                            {client.logo}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <h3 className="font-serif text-lg text-gray-900">{client.name}</h3>
+                              {client.password_enabled && (
+                                <span title="Password protected">🔒</span>
+                              )}
+                              {client.client_tag && (
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                  client.client_tag === 'symphony'
+                                    ? 'bg-purple-100 text-purple-700'
+                                    : 'bg-amber-100 text-amber-700'
+                                }`}>
+                                  {client.client_tag === 'symphony' ? 'Symphony' : 'Legacy Drip'}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-sm text-gray-500 flex items-center gap-2 flex-wrap">
+                              <span>{client.activeCount} active • {client.queuedCount} queued</span>
+                              <span className="text-xs hidden sm:inline">•</span>
+                              {client.notion_project_id ? (
+                                <span className="text-xs text-green-600 flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block" />
+                                  Notion configured
+                                </span>
+                              ) : (
+                                <span className="text-xs text-amber-500 flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 bg-amber-400 rounded-full inline-block" />
+                                  No project ID
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 sm:gap-5 justify-end">
+                          {clientPrice && (
+                            <div className="text-right">
+                              <div className="text-lg font-semibold text-gray-900">
+                                ${parseInt(clientPrice).toLocaleString()}
+                              </div>
+                              <div className="text-xs text-gray-400">/month</div>
+                            </div>
+                          )}
+                          <div className={`px-3 py-1.5 rounded text-xs font-semibold uppercase ${
+                            client.plan === 'scale' ? 'bg-gray-900 text-white' : 'bg-[#8B7355] text-white'
+                          }`}>
+                            {plan?.name}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              copyClientLink(client)
+                            }}
+                            className="px-3 py-2 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200"
+                            title="Copy portal link"
+                          >
+                            🔗
+                          </button>
+                          <div
+                            className="text-gray-400 cursor-pointer hidden sm:block"
+                            onClick={() => onSelectClient(client.id)}
+                          >
+                            →
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-              )}
-            </div>
+              )
+            })()}
 
             {/* Monthly Revenue Summary */}
             {(() => {
@@ -834,33 +998,33 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                 return total + parseInt(price)
               }, 0)
               return clients.length > 0 && (
-                <div className="mt-8 bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-                  <div className="flex items-center justify-between">
+                <div className="mt-8 bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-200">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
-                      <div className="text-sm text-gray-500 mb-1">Monthly Revenue (USD)</div>
-                      <div className="text-2xl font-semibold text-gray-900">
+                      <div className="text-xs sm:text-sm text-gray-500 mb-1">Monthly Revenue (USD)</div>
+                      <div className="text-xl sm:text-2xl font-semibold text-gray-900">
                         ${mrrUsd.toLocaleString()}
                       </div>
                       {pausedCount > 0 && (
                         <div className="text-xs text-amber-600 mt-1">
-                          {pausedCount} paused client{pausedCount === 1 ? '' : 's'} excluded
+                          {pausedCount} paused excluded
                         </div>
                       )}
                     </div>
                     <div>
-                      <div className="text-sm text-gray-500 mb-1">
-                        Monthly Revenue (CAD){cadRate && <span className="text-xs text-gray-400 ml-1">@ {cadRate.toFixed(2)}</span>}
+                      <div className="text-xs sm:text-sm text-gray-500 mb-1">
+                        CAD{cadRate && <span className="text-xs text-gray-400 ml-1">@ {cadRate.toFixed(2)}</span>}
                       </div>
-                      <div className="text-2xl font-semibold text-gray-900">
+                      <div className="text-xl sm:text-2xl font-semibold text-gray-900">
                         {cadRate
                           ? `C$${Math.round(mrrUsd * cadRate).toLocaleString()}`
                           : '...'
                         }
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm text-gray-500 mb-1">Active Clients</div>
-                      <div className="text-2xl font-semibold text-gray-900">{activeClients.length}</div>
+                    <div className="col-span-2 lg:col-span-1 lg:text-right">
+                      <div className="text-xs sm:text-sm text-gray-500 mb-1">Active Clients</div>
+                      <div className="text-xl sm:text-2xl font-semibold text-gray-900">{activeClients.length}</div>
                     </div>
                   </div>
                 </div>

@@ -207,14 +207,14 @@ export default function ClientPortal({ client, onRefresh }) {
       <div className="h-1.5 bg-[#8B7355]" />
 
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-10 py-5">
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-10 py-4 sm:py-5">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-xl">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-xl flex-shrink-0">
               {client.logo}
             </div>
-            <div>
-              <h1 className="font-serif text-xl text-gray-900">{client.name}</h1>
+            <div className="min-w-0">
+              <h1 className="font-serif text-lg sm:text-xl text-gray-900 truncate">{client.name}</h1>
               <span className="text-xs text-gray-500">Symphony by Interlude</span>
             </div>
           </div>
@@ -222,7 +222,7 @@ export default function ClientPortal({ client, onRefresh }) {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-10 py-10 grid grid-cols-[1fr_340px] gap-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-10 py-6 sm:py-10 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 lg:gap-10">
         <div>
           {/* New Request */}
           <div className="mb-8">
@@ -384,19 +384,19 @@ export default function ClientPortal({ client, onRefresh }) {
             <h2 className="font-serif text-xl mb-5">Requests</h2>
             
             {/* Tabs */}
-            <div className="flex gap-2 mb-5 bg-white p-1.5 rounded-lg shadow-sm">
+            <div className="flex gap-1 sm:gap-2 mb-5 bg-white p-1 sm:p-1.5 rounded-lg shadow-sm overflow-x-auto">
               {tabs.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveFilter(tab.id)}
-                  className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex-1 py-2 sm:py-3 px-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                     activeFilter === tab.id
                       ? 'bg-gray-900 text-white'
                       : 'text-gray-500 hover:bg-gray-50'
                   }`}
                 >
                   {tab.label}
-                  <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                  <span className={`ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 rounded-full text-xs ${
                     activeFilter === tab.id ? 'bg-white/20' : 'bg-gray-100'
                   }`}>
                     {tab.count}

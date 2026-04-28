@@ -329,38 +329,40 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
       <div className="h-1.5 bg-[#8B7355]" />
 
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-10 py-5">
-        <div className="flex items-center justify-between max-w-6xl mx-auto">
-          <div className="flex items-center gap-4">
-            <button onClick={onBack} className="text-xl hover:bg-gray-100 p-2 rounded">
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-10 py-4 sm:py-5">
+        <div className="flex items-center justify-between max-w-6xl mx-auto gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+            <button onClick={onBack} className="text-xl hover:bg-gray-100 p-2 rounded flex-shrink-0">
               ←
             </button>
-            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-xl">
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-xl flex-shrink-0">
               {client.logo}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-serif text-xl text-gray-900">{client.name}</h1>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="font-serif text-lg sm:text-xl text-gray-900 truncate">{client.name}</h1>
                 {client.client_status === 'paused' && (
-                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 flex-shrink-0">
                     ⏸️ Paused
                   </span>
                 )}
               </div>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500 truncate hidden sm:block">
                 symphony.interlude.studio/{client.slug}
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <button onClick={copyClientLink} className="btn-accent text-sm">
-              🔗 Copy Client Link
+              <span className="sm:hidden">🔗</span>
+              <span className="hidden sm:inline">🔗 Copy Client Link</span>
             </button>
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className={`px-4 py-2 rounded-lg text-sm ${showSettings ? 'bg-gray-100' : 'bg-transparent border border-gray-200'}`}
+              className={`px-3 sm:px-4 py-2 rounded-lg text-sm ${showSettings ? 'bg-gray-100' : 'bg-transparent border border-gray-200'}`}
             >
-              ⚙️ Settings
+              <span className="sm:hidden">⚙️</span>
+              <span className="hidden sm:inline">⚙️ Settings</span>
             </button>
           </div>
         </div>
@@ -368,8 +370,8 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
 
       {/* Settings Panel */}
       {showSettings && (
-        <div className="bg-white border-b border-gray-200 px-10 py-6">
-          <div className="max-w-6xl mx-auto grid grid-cols-4 gap-8">
+        <div className="bg-white border-b border-gray-200 px-4 sm:px-10 py-6">
+          <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
             <div>
               <label className="label">Client Name</label>
               <input
@@ -492,7 +494,7 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
             </div>
 
             {/* Client Project Page ID */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="label">Client Project Page ID (Optional)</label>
                 <input
@@ -531,7 +533,7 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
 
           {/* Pause / Resume */}
           <div className="max-w-6xl mx-auto mt-8 pt-6 border-t border-gray-200">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <h4 className="text-sm font-semibold text-gray-700">
                   {client.client_status === 'paused' ? 'Resume Client' : 'Pause Client'}
@@ -561,7 +563,7 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
                     alert('Error updating status: ' + err.message)
                   }
                 }}
-                className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                className={`px-4 py-2 rounded-lg text-sm transition-colors self-start sm:self-auto ${
                   client.client_status === 'paused'
                     ? 'bg-green-50 border border-green-300 text-green-700 hover:bg-green-100'
                     : 'bg-amber-50 border border-amber-300 text-amber-700 hover:bg-amber-100'
@@ -574,14 +576,14 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
 
           {/* Danger Zone */}
           <div className="max-w-6xl mx-auto mt-8 pt-6 border-t border-red-200">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <h4 className="text-sm font-semibold text-red-600">Danger Zone</h4>
                 <p className="text-xs text-gray-500 mt-1">Permanently delete this client and all their requests</p>
               </div>
               <button
                 onClick={() => setShowDeleteModal(true)}
-                className="px-4 py-2 bg-white border border-red-300 text-red-600 rounded-lg text-sm hover:bg-red-50 transition-colors"
+                className="px-4 py-2 bg-white border border-red-300 text-red-600 rounded-lg text-sm hover:bg-red-50 transition-colors self-start sm:self-auto"
               >
                 Delete Client
               </button>
@@ -591,7 +593,7 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
       )}
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-10 py-10 grid grid-cols-[1fr_340px] gap-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-10 py-6 sm:py-10 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 lg:gap-10">
         <div>
           {/* New Request */}
           <div className="mb-8">
@@ -753,19 +755,19 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
             <h2 className="font-serif text-xl mb-5">Requests</h2>
             
             {/* Tabs */}
-            <div className="flex gap-2 mb-5 bg-white p-1.5 rounded-lg shadow-sm">
+            <div className="flex gap-1 sm:gap-2 mb-5 bg-white p-1 sm:p-1.5 rounded-lg shadow-sm overflow-x-auto">
               {tabs.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveFilter(tab.id)}
-                  className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex-1 py-2 sm:py-3 px-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                     activeFilter === tab.id
                       ? 'bg-gray-900 text-white'
                       : 'text-gray-500 hover:bg-gray-50'
                   }`}
                 >
                   {tab.label}
-                  <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                  <span className={`ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 rounded-full text-xs ${
                     activeFilter === tab.id ? 'bg-white/20' : 'bg-gray-100'
                   }`}>
                     {tab.count}
