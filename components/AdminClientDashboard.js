@@ -339,7 +339,14 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
               {client.logo}
             </div>
             <div>
-              <h1 className="font-serif text-xl text-gray-900">{client.name}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="font-serif text-xl text-gray-900">{client.name}</h1>
+                {client.client_status === 'paused' && (
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                    ⏸️ Paused
+                  </span>
+                )}
+              </div>
               <span className="text-xs text-gray-500">
                 symphony.interlude.studio/{client.slug}
               </span>
@@ -520,6 +527,49 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
             >
               {notionSaving ? 'Saving...' : 'Save Notion Settings'}
             </button>
+          </div>
+
+          {/* Pause / Resume */}
+          <div className="max-w-6xl mx-auto mt-8 pt-6 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700">
+                  {client.client_status === 'paused' ? 'Resume Client' : 'Pause Client'}
+                </h4>
+                <p className="text-xs text-gray-500 mt-1">
+                  {client.client_status === 'paused'
+                    ? 'This client is currently paused. Resume to add them back to the main client list and MRR.'
+                    : 'Move this client to the Paused tab. They will be hidden from the main list and excluded from MRR totals.'}
+                </p>
+              </div>
+              <button
+                onClick={async () => {
+                  const newStatus = client.client_status === 'paused' ? 'active' : 'paused'
+                  try {
+                    const res = await fetch(`/api/clients/${client.id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ clientStatus: newStatus })
+                    })
+                    const data = await res.json()
+                    if (data.error) throw new Error(data.error)
+                    onRefresh()
+                    if (newStatus === 'paused') {
+                      onBack()
+                    }
+                  } catch (err) {
+                    alert('Error updating status: ' + err.message)
+                  }
+                }}
+                className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                  client.client_status === 'paused'
+                    ? 'bg-green-50 border border-green-300 text-green-700 hover:bg-green-100'
+                    : 'bg-amber-50 border border-amber-300 text-amber-700 hover:bg-amber-100'
+                }`}
+              >
+                {client.client_status === 'paused' ? '▶️ Resume Client' : '⏸️ Pause Client'}
+              </button>
+            </div>
           </div>
 
           {/* Danger Zone */}

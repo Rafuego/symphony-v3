@@ -232,6 +232,21 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
               Clients
             </button>
             <button
+              onClick={() => setActiveTab('paused')}
+              className={`px-5 py-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+                activeTab === 'paused'
+                  ? 'border-[#8B7355] text-[#8B7355]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Paused
+              {clients.filter(c => c.client_status === 'paused').length > 0 && (
+                <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-full">
+                  {clients.filter(c => c.client_status === 'paused').length}
+                </span>
+              )}
+            </button>
+            <button
               onClick={() => setActiveTab('pending')}
               className={`px-5 py-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
                 activeTab === 'pending'
@@ -562,6 +577,79 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
             )}
           </>
 
+        ) : activeTab === 'paused' ? (
+          /* ===== PAUSED CLIENTS TAB ===== */
+          <>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="font-serif text-2xl font-normal text-gray-900">
+                Paused Clients
+              </h2>
+            </div>
+            <p className="text-sm text-gray-500 mb-6">
+              Clients on hold. They are excluded from monthly revenue totals and the main client list. Resume them anytime from their settings.
+            </p>
+
+            <div className="space-y-3">
+              {[...clients]
+                .filter(c => c.client_status === 'paused')
+                .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+                .map(client => {
+                  const plan = planConfig[client.plan]
+                  const clientPrice = client.custom_price || plan?.defaultPrice
+                  return (
+                    <div
+                      key={client.id}
+                      className="card flex items-center gap-5 hover:shadow-md transition-shadow opacity-75"
+                    >
+                      <div
+                        className="flex items-center gap-5 flex-1 cursor-pointer"
+                        onClick={() => onSelectClient(client.id)}
+                      >
+                        <div className="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center text-2xl">
+                          {client.logo || '⏸️'}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-serif text-lg text-gray-900">{client.name}</h3>
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                              Paused
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {client.activeCount} active • {client.queuedCount} queued
+                          </div>
+                        </div>
+                        {clientPrice && (
+                          <div className="text-right mr-2">
+                            <div className="text-lg font-semibold text-gray-400">
+                              ${parseInt(clientPrice).toLocaleString()}
+                            </div>
+                            <div className="text-xs text-gray-400">/month (paused)</div>
+                          </div>
+                        )}
+                        <div className="px-3 py-1.5 rounded text-xs font-semibold uppercase bg-gray-200 text-gray-500">
+                          {plan?.name}
+                        </div>
+                      </div>
+                      <div
+                        className="text-gray-400 cursor-pointer"
+                        onClick={() => onSelectClient(client.id)}
+                      >
+                        →
+                      </div>
+                    </div>
+                  )
+                })}
+
+              {clients.filter(c => c.client_status === 'paused').length === 0 && (
+                <div className="card text-center py-12">
+                  <div className="text-5xl mb-4 opacity-50">⏸️</div>
+                  <p className="text-gray-500">No paused clients.</p>
+                </div>
+              )}
+            </div>
+          </>
+
         ) : (
           /* ===== CLIENTS TAB ===== */
           <>
@@ -641,7 +729,9 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
 
             {/* Client List */}
             <div className="space-y-3">
-              {[...clients].sort((a, b) => {
+              {[...clients]
+                .filter(c => c.client_status !== 'paused')
+                .sort((a, b) => {
                 const tagOrder = { symphony: 0, '': 1, legacy_drip: 2 }
                 const aOrder = tagOrder[a.client_tag || ''] ?? 1
                 const bOrder = tagOrder[b.client_tag || ''] ?? 1
@@ -727,48 +817,55 @@ export default function AdminClientList({ clients, onSelectClient, onRefresh }) 
                 )
               })}
 
-              {clients.length === 0 && (
+              {clients.filter(c => c.client_status !== 'paused').length === 0 && (
                 <div className="card text-center py-12">
                   <div className="text-5xl mb-4 opacity-50">📋</div>
-                  <p className="text-gray-500">No clients yet. Create your first client to get started.</p>
+                  <p className="text-gray-500">No active clients. Create one or check the Paused tab.</p>
                 </div>
               )}
             </div>
 
             {/* Monthly Revenue Summary */}
-            {clients.length > 0 && (
-              <div className="mt-8 bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm text-gray-500 mb-1">Monthly Revenue (USD)</div>
-                    <div className="text-2xl font-semibold text-gray-900">
-                      ${clients.reduce((total, c) => {
-                        const price = c.custom_price || planConfig[c.plan]?.defaultPrice || 0
-                        return total + parseInt(price)
-                      }, 0).toLocaleString()}
+            {(() => {
+              const activeClients = clients.filter(c => c.client_status !== 'paused')
+              const pausedCount = clients.length - activeClients.length
+              const mrrUsd = activeClients.reduce((total, c) => {
+                const price = c.custom_price || planConfig[c.plan]?.defaultPrice || 0
+                return total + parseInt(price)
+              }, 0)
+              return clients.length > 0 && (
+                <div className="mt-8 bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">Monthly Revenue (USD)</div>
+                      <div className="text-2xl font-semibold text-gray-900">
+                        ${mrrUsd.toLocaleString()}
+                      </div>
+                      {pausedCount > 0 && (
+                        <div className="text-xs text-amber-600 mt-1">
+                          {pausedCount} paused client{pausedCount === 1 ? '' : 's'} excluded
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-500 mb-1">
-                      Monthly Revenue (CAD){cadRate && <span className="text-xs text-gray-400 ml-1">@ {cadRate.toFixed(2)}</span>}
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">
+                        Monthly Revenue (CAD){cadRate && <span className="text-xs text-gray-400 ml-1">@ {cadRate.toFixed(2)}</span>}
+                      </div>
+                      <div className="text-2xl font-semibold text-gray-900">
+                        {cadRate
+                          ? `C$${Math.round(mrrUsd * cadRate).toLocaleString()}`
+                          : '...'
+                        }
+                      </div>
                     </div>
-                    <div className="text-2xl font-semibold text-gray-900">
-                      {cadRate
-                        ? `C$${Math.round(clients.reduce((total, c) => {
-                            const price = c.custom_price || planConfig[c.plan]?.defaultPrice || 0
-                            return total + parseInt(price)
-                          }, 0) * cadRate).toLocaleString()}`
-                        : '...'
-                      }
+                    <div className="text-right">
+                      <div className="text-sm text-gray-500 mb-1">Active Clients</div>
+                      <div className="text-2xl font-semibold text-gray-900">{activeClients.length}</div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-500 mb-1">Active Clients</div>
-                    <div className="text-2xl font-semibold text-gray-900">{clients.length}</div>
                   </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
           </>
         )}
       </div>

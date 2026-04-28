@@ -73,6 +73,11 @@ export async function PATCH(request, { params }) {
       updates.client_tag = body.clientTag || null
     }
 
+    // Handle client status (active / paused)
+    if (body.clientStatus !== undefined) {
+      updates.client_status = body.clientStatus || 'active'
+    }
+
     // Handle Notion database ID
     if (body.notionDatabaseId !== undefined) {
       updates.notion_database_id = body.notionDatabaseId || null
