@@ -13,6 +13,7 @@ module.exports = {
       },
       fontFamily: {
         serif: ['Georgia', 'serif'],
+        sans: ['FFF Acid Grotesk', 'system-ui', '-apple-system', 'sans-serif'],
       },
     },
   },
