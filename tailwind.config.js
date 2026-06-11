@@ -12,7 +12,7 @@ module.exports = {
         'symphony-cream': '#F5F0EB',
       },
       fontFamily: {
-        serif: ['Georgia', 'serif'],
+        serif: ['Louize Display', 'Georgia', 'serif'],
         sans: ['FFF Acid Grotesk', 'system-ui', '-apple-system', 'sans-serif'],
       },
     },
