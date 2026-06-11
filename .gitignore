@@ -28,6 +28,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# claude code (local agent state, settings, worktrees)
+.claude/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

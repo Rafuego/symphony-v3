@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
 import { updateNotionPage } from '@/lib/notion'
+import { logSystemEvent } from '@/lib/requestEvents'
 
 // PATCH /api/requests/[id] - Update request
 export async function PATCH(request, { params }) {
@@ -8,9 +9,22 @@ export async function PATCH(request, { params }) {
     const supabase = createServerSupabaseClient()
     const { id } = params
     const body = await request.json()
-    
+
     const updates = {}
-    
+
+    // v2 clients pass an actor ({ type, name }) to attribute the change in the
+    // Updates feed. Legacy UI omits it, so no events are logged for prod paths.
+    const actor = body.actor
+    let before = null
+    if (actor && (body.status !== undefined || body.assigneeName !== undefined)) {
+      const { data } = await supabase
+        .from('requests')
+        .select('status, assignee_name')
+        .eq('id', id)
+        .single()
+      before = data
+    }
+
     if (body.status !== undefined) {
       updates.status = body.status
       
@@ -51,7 +65,11 @@ export async function PATCH(request, { params }) {
     if (body.attachments !== undefined) updates.attachments = body.attachments
     if (body.deliverables !== undefined) updates.deliverables = body.deliverables
     if (body.requestedDueDate !== undefined) updates.requested_due_date = body.requestedDueDate || null
-    
+
+    // Assignment (designer) — denormalized snapshot
+    if (body.assigneeName !== undefined) updates.assignee_name = body.assigneeName || null
+    if (body.assigneeId !== undefined) updates.assignee_id = body.assigneeId || null
+
     const { data: updatedRequest, error } = await supabase
       .from('requests')
       .update(updates)
@@ -89,6 +107,26 @@ export async function PATCH(request, { params }) {
       }
 
       await updateNotionPage(notionUpdates)
+    }
+
+    // Log system events to the Updates feed (v2 only — gated on `actor`).
+    if (actor && before) {
+      if (body.status !== undefined && before.status !== body.status) {
+        await logSystemEvent(supabase, {
+          requestId: id,
+          eventType: 'status_changed',
+          eventMeta: { from: before.status, to: body.status, assignee: updatedRequest.assignee_name || null },
+          actor,
+        })
+      }
+      if (body.assigneeName !== undefined && (before.assignee_name || null) !== (body.assigneeName || null)) {
+        await logSystemEvent(supabase, {
+          requestId: id,
+          eventType: 'assigned',
+          eventMeta: { assignee: body.assigneeName || null },
+          actor,
+        })
+      }
     }
 
     return NextResponse.json({ request: updatedRequest })

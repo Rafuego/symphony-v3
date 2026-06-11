@@ -68,6 +68,12 @@ export async function PATCH(request, { params }) {
       updates.brand_assets = body.brandAssets
     }
 
+    // Account profile fields (redesign Settings > Account)
+    if (body.website !== undefined) updates.website = body.website || null
+    if (body.description !== undefined) updates.description = body.description || null
+    if (body.pointOfContact !== undefined) updates.point_of_contact = body.pointOfContact || {}
+    if (body.logoUrl !== undefined) updates.logo_url = body.logoUrl || null
+
     // Handle client tag (symphony / legacy_drip)
     if (body.clientTag !== undefined) {
       updates.client_tag = body.clientTag || null

@@ -379,3 +379,77 @@ ADD COLUMN IF NOT EXISTS client_status TEXT DEFAULT 'active';
 -- Possible values: 'active', 'paused'
 -- Paused clients are hidden from the main Clients tab and excluded from MRR
 
+-- ========================================
+-- 012_client_account_fields.sql
+-- ========================================
+-- Symphony by Interlude - Migration 012
+-- Adds client account/profile fields surfaced in the redesigned Settings > Account tab
+-- Run this in your Supabase SQL Editor AFTER migration 011
+--
+-- DATA-SAFE: additive only. No existing column is dropped or retyped.
+-- The existing emoji `logo` column is left untouched; `logo_url` is added alongside it.
+
+ALTER TABLE clients
+ADD COLUMN IF NOT EXISTS website TEXT;
+
+ALTER TABLE clients
+ADD COLUMN IF NOT EXISTS description TEXT;
+
+-- Point of contact: { name, title, email, phone }
+ALTER TABLE clients
+ADD COLUMN IF NOT EXISTS point_of_contact JSONB DEFAULT '{}'::jsonb;
+
+-- Uploaded logo image URL (keeps the existing emoji `logo` column intact)
+ALTER TABLE clients
+ADD COLUMN IF NOT EXISTS logo_url TEXT;
+
+-- ========================================
+-- 013_request_updates.sql
+-- ========================================
+-- Symphony by Interlude - Migration 013
+-- Adds the Request Detail Drawer's "Updates" feed + request assignment, and widens the
+-- request_type CHECK to allow the new 'animation' type.
+-- Run this in your Supabase SQL Editor AFTER migration 012
+--
+-- DATA-SAFE: additive only. No rows are rewritten. The request_type CHECK is WIDENED
+-- (all 6 existing ids kept, 'animation' added). New tables are independent.
+--
+-- NOTE before running on production: confirm the live constraint name is
+-- 'requests_request_type_check' (run: \d requests). If it differs, the DROP below
+-- silently no-ops and the ADD will collide with the old constraint.
+
+ALTER TABLE requests DROP CONSTRAINT IF EXISTS requests_request_type_check;
+ALTER TABLE requests ADD CONSTRAINT requests_request_type_check
+  CHECK (request_type IN ('brand', 'site', 'deck', 'product', 'marketing', 'misc', 'animation'));
+
+ALTER TABLE requests ADD COLUMN IF NOT EXISTS assignee_name TEXT;
+ALTER TABLE requests ADD COLUMN IF NOT EXISTS assignee_id UUID;
+
+CREATE TABLE IF NOT EXISTS request_updates (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  request_id UUID NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL DEFAULT 'comment'
+    CHECK (kind IN ('comment', 'new_requirement', 'changes', 'system')),
+  event_type TEXT
+    CHECK (event_type IN ('created', 'status_changed', 'assigned', 'file_uploaded', 'file_removed')),
+  event_meta JSONB DEFAULT '{}'::jsonb,
+  author_type TEXT NOT NULL DEFAULT 'system'
+    CHECK (author_type IN ('client', 'admin', 'system')),
+  author_name TEXT,
+  author_id UUID,
+  body TEXT,
+  links JSONB DEFAULT '[]'::jsonb,
+  files JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_request_updates_request_id
+  ON request_updates(request_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS request_update_reads (
+  request_id UUID NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+  viewer_side TEXT NOT NULL CHECK (viewer_side IN ('client', 'admin')),
+  last_read_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (request_id, viewer_side)
+);
+
