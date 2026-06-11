@@ -35,12 +35,14 @@ export default function AdminClientListV2({ clients, onSelectClient, onRefresh }
   const mrr = activeClients.reduce((t, c) => t + clientMRR(c), 0)
 
   const filtered = useMemo(() => {
-    let list = [...clients]
+    const isPaused = (c) => (c.client_status || 'active') === 'paused'
+    // Clients tab → active only; Paused tab → paused only.
+    let list = clients.filter((c) => (tab === 'paused' ? isPaused(c) : !isPaused(c)))
     const q = search.trim().toLowerCase()
     if (q) list = list.filter((c) => (c.name || '').toLowerCase().includes(q))
     list.sort((a, b) => (sort === 'mrr' ? clientMRR(b) - clientMRR(a) : (a.name || '').localeCompare(b.name || '')))
     return list
-  }, [clients, search, sort])
+  }, [clients, tab, search, sort])
 
   const visibleClients = filtered.slice(0, visible)
 
@@ -51,10 +53,18 @@ export default function AdminClientListV2({ clients, onSelectClient, onRefresh }
   }
 
   const tabs = [
-    { id: 'clients', label: 'Clients', count: clients.length },
+    { id: 'clients', label: 'Clients', count: activeClients.length },
+    { id: 'paused', label: 'Paused', count: pausedCount },
     { id: 'pending', label: 'Pending', count: dealsCount },
     { id: 'alerts', label: 'Alerts', count: unreadCount },
   ]
+
+  const isClientList = tab === 'clients' || tab === 'paused'
+  const emptyTitle = search
+    ? 'No matching clients'
+    : tab === 'paused'
+      ? 'No paused clients'
+      : 'No clients yet'
 
   return (
     <div className="min-h-screen bg-white">
@@ -91,7 +101,7 @@ export default function AdminClientListV2({ clients, onSelectClient, onRefresh }
       <div className="px-4 sm:px-8 py-6">
         <div className="flex items-center justify-between mb-5">
           <h1 className="font-serif text-3xl text-gray-900">Client Accounts</h1>
-          {tab === 'clients' && (
+          {isClientList && (
             <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden text-sm">
               <button onClick={() => setView('table')} className={`px-3 py-1.5 ${view === 'table' ? 'bg-gray-100 text-gray-900' : 'text-gray-500'}`}>▦ Table</button>
               <button onClick={() => setView('grid')} className={`px-3 py-1.5 ${view === 'grid' ? 'bg-gray-100 text-gray-900' : 'text-gray-500'}`}>▥ Grid</button>
@@ -101,7 +111,7 @@ export default function AdminClientListV2({ clients, onSelectClient, onRefresh }
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <Tabs tabs={tabs} active={tab} onChange={(id) => { setTab(id); setVisible(PAGE_SIZE) }} />
-          {tab === 'clients' && (
+          {isClientList && (
             <div className="flex items-center gap-2">
               <input
                 value={search}
@@ -117,12 +127,12 @@ export default function AdminClientListV2({ clients, onSelectClient, onRefresh }
           )}
         </div>
 
-        {tab === 'clients' && (
+        {isClientList && (
           <>
             {view === 'table' ? (
-              <ClientTable clients={visibleClients} onOpen={onSelectClient} onEdit={setEditClient} onCopyLink={copyLink} emptyTitle={search ? 'No matching clients' : 'No clients yet'} />
+              <ClientTable clients={visibleClients} onOpen={onSelectClient} onEdit={setEditClient} onCopyLink={copyLink} emptyTitle={emptyTitle} />
             ) : (
-              <ClientGrid clients={visibleClients} onOpen={onSelectClient} onCopyLink={copyLink} emptyTitle={search ? 'No matching clients' : 'No clients yet'} />
+              <ClientGrid clients={visibleClients} onOpen={onSelectClient} onCopyLink={copyLink} emptyTitle={emptyTitle} />
             )}
             <LoadMore hasMore={filtered.length > visible} remaining={filtered.length - visible} onLoadMore={() => setVisible((v) => v + PAGE_SIZE)} />
           </>
