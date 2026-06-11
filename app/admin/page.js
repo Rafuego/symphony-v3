@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import AdminClientList from '@/components/AdminClientList'
-import AdminClientDashboard from '@/components/AdminClientDashboard'
+import AdminClientListV2 from '@/components/v2/AdminClientListV2'
+import AdminClientDashboardV2 from '@/components/v2/AdminClientDashboardV2'
 import AdminPasswordGate from '@/components/AdminPasswordGate'
 
 export default function AdminPage() {
@@ -87,13 +87,13 @@ export default function AdminPage() {
           </div>
         </div>
       ) : selectedClient ? (
-        <AdminClientDashboard
+        <AdminClientDashboardV2
           client={selectedClient}
           onBack={handleBack}
           onRefresh={handleRefresh}
         />
       ) : (
-        <AdminClientList
+        <AdminClientListV2
           clients={clients}
           onSelectClient={handleSelectClient}
           onRefresh={fetchClients}

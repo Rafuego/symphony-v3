@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import AdminClientList from '@/components/AdminClientList'
+import AdminClientListV2 from '@/components/v2/AdminClientListV2'
 import AdminClientDashboardV2 from '@/components/v2/AdminClientDashboardV2'
 import AdminPasswordGate from '@/components/AdminPasswordGate'
 
-// v2 admin. Reuses the existing client-list + password gate (Section 3 list redesign
-// is deferred); only the single-client dashboard is swapped to the v2 view.
+// v2 admin. Both the client list (Section 3) and the single-client dashboard
+// (Sections 1-2) are the redesigned v2 views.
 export default function AdminV2Page() {
   const [clients, setClients] = useState([])
   const [selectedClientId, setSelectedClientId] = useState(null)
@@ -82,7 +82,7 @@ export default function AdminV2Page() {
           onRefresh={handleRefresh}
         />
       ) : (
-        <AdminClientList
+        <AdminClientListV2
           clients={clients}
           onSelectClient={setSelectedClientId}
           onRefresh={fetchClients}
