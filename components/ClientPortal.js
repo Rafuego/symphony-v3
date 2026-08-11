@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { planConfig, statusConfig, requestTypes } from '@/lib/supabase'
 import { uploadFile } from '@/lib/uploadFile'
 import RequestCard from '@/components/RequestCard'
+import QueueList from '@/components/QueueList'
 
 export default function ClientPortal({ client, onRefresh }) {
   const searchParams = useSearchParams()
@@ -430,41 +431,33 @@ export default function ClientPortal({ client, onRefresh }) {
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 flex items-center gap-3">
                 <span className="text-xl">💡</span>
                 <span className="text-sm text-amber-800">
-                  Use the arrows to reorder priority. The #1 item will automatically start when capacity opens up.
+                  Drag the ⋮⋮ handle to reorder. The #1 item will automatically start when capacity opens up.
                 </span>
               </div>
             )}
 
             {/* Request List */}
-            <div className="space-y-4">
-              {filteredRequests.map((request, index) => (
-                <div key={request.id} id={`request-${request.id}`}>
-                  <RequestCard
-                    request={request}
-                    isAdmin={false}
-                    showPriorityControls={activeFilter === 'in-queue'}
-                    queuePosition={activeFilter === 'in-queue' ? index + 1 : null}
-                    totalQueued={queuedCount}
-                    clientId={client.id}
-                    onRefresh={onRefresh}
-                  />
+            {filteredRequests.length === 0 ? (
+              <div className="card text-center py-12">
+                <div className="text-5xl mb-4 opacity-50">
+                  {activeFilter === 'completed' ? '✓' : activeFilter === 'in-queue' ? '📋' : '🎯'}
                 </div>
-              ))}
-
-              {filteredRequests.length === 0 && (
-                <div className="card text-center py-12">
-                  <div className="text-5xl mb-4 opacity-50">
-                    {activeFilter === 'completed' ? '✓' : activeFilter === 'in-queue' ? '📋' : '🎯'}
-                  </div>
-                  <p className="text-gray-500">
-                    {activeFilter === 'in-progress' && 'No requests in progress'}
-                    {activeFilter === 'in-review' && 'No requests in review'}
-                    {activeFilter === 'in-queue' && 'Queue is empty'}
-                    {activeFilter === 'completed' && 'No completed requests yet'}
-                  </p>
-                </div>
-              )}
-            </div>
+                <p className="text-gray-500">
+                  {activeFilter === 'in-progress' && 'No requests in progress'}
+                  {activeFilter === 'in-review' && 'No requests in review'}
+                  {activeFilter === 'in-queue' && 'Queue is empty'}
+                  {activeFilter === 'completed' && 'No completed requests yet'}
+                </p>
+              </div>
+            ) : (
+              <QueueList
+                requests={filteredRequests}
+                activeFilter={activeFilter}
+                queuedCount={queuedCount}
+                clientId={client.id}
+                onRefresh={onRefresh}
+              />
+            )}
           </div>
         </div>
 
@@ -586,3 +579,4 @@ export default function ClientPortal({ client, onRefresh }) {
     </div>
   )
 }
+

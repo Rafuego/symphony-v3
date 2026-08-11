@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { planConfig, statusConfig, requestTypes } from '@/lib/supabase'
 import { uploadFile } from '@/lib/uploadFile'
 import RequestCard from '@/components/RequestCard'
+import QueueList from '@/components/QueueList'
 import PlanModal from '@/components/PlanModal'
 
 export default function AdminClientDashboard({ client, onBack, onRefresh }) {
@@ -38,6 +39,7 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
   const [notionTemplateId, setNotionTemplateId] = useState(client.notion_template_id || '')
   const [notionSaving, setNotionSaving] = useState(false)
   const [notionTestResult, setNotionTestResult] = useState(null)
+  const [notionTesting, setNotionTesting] = useState(false)
 
   // Brand assets state
   const [brandAssets, setBrandAssets] = useState(client.brand_assets || [])
@@ -213,18 +215,24 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
   }
 
   const handleTestNotion = async () => {
-    if (!notionDatabaseId.trim()) return
+    setNotionTesting(true)
     setNotionTestResult(null)
     try {
       const res = await fetch('/api/notion/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ databaseId: notionDatabaseId.trim() })
+        body: JSON.stringify({
+          databaseId: (notionDatabaseId || '24e866d074498154a2a2ca1cd1768b41').trim(),
+          projectId: notionProjectId.trim() || undefined,
+          templateId: notionTemplateId.trim() || undefined,
+        }),
       })
       const result = await res.json()
       setNotionTestResult(result)
     } catch (err) {
-      setNotionTestResult({ valid: false, error: err.message })
+      setNotionTestResult({ ok: false, error: err.message })
+    } finally {
+      setNotionTesting(false)
     }
   }
 
@@ -522,13 +530,39 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
                 </p>
               </div>
             </div>
-            <button
-              onClick={handleSaveNotion}
-              disabled={notionSaving}
-              className="btn-accent text-sm"
-            >
-              {notionSaving ? 'Saving...' : 'Save Notion Settings'}
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={handleSaveNotion}
+                disabled={notionSaving}
+                className="btn-accent text-sm"
+              >
+                {notionSaving ? 'Saving...' : 'Save Notion Settings'}
+              </button>
+              <button
+                onClick={handleTestNotion}
+                disabled={notionTesting}
+                className="btn-secondary text-sm"
+                type="button"
+              >
+                {notionTesting ? 'Testing...' : 'Test Connection'}
+              </button>
+            </div>
+
+            {notionTestResult && (
+              <div className="mt-4 p-4 rounded-lg border border-gray-200 bg-gray-50 text-sm">
+                {notionTestResult.error ? (
+                  <div className="text-red-600">
+                    <span className="font-medium">✗ Test failed:</span> {notionTestResult.error}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <NotionTestRow label="Tasks Database" result={notionTestResult.database} />
+                    <NotionTestRow label="Client Project Page" result={notionTestResult.project} emptyLabel="(none set)" />
+                    <NotionTestRow label="Template Page" result={notionTestResult.template} emptyLabel="(none set)" />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Pause / Resume */}
@@ -801,26 +835,23 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 flex items-center gap-3">
                 <span className="text-xl">💡</span>
                 <span className="text-sm text-amber-800">
-                  Use the arrows to reorder priority. The #1 item will automatically start when capacity opens up.
+                  Drag the ⋮⋮ handle to reorder. The #1 item will automatically start when capacity opens up.
                 </span>
               </div>
             )}
 
             {/* Request List */}
-            <div className="space-y-4">
-              {filteredRequests.map((request, index) => (
-                <div key={request.id} id={`request-${request.id}`}>
-                  <RequestCard
-                    request={request}
-                    isAdmin={true}
-                    showPriorityControls={activeFilter === 'in-queue'}
-                    queuePosition={activeFilter === 'in-queue' ? index + 1 : null}
-                    totalQueued={queuedCount}
-                    clientId={client.id}
-                    onRefresh={onRefresh}
-                  />
-                </div>
-              ))}
+            <div>
+              {filteredRequests.length > 0 && (
+                <QueueList
+                  requests={filteredRequests}
+                  activeFilter={activeFilter}
+                  queuedCount={queuedCount}
+                  clientId={client.id}
+                  isAdmin={true}
+                  onRefresh={onRefresh}
+                />
+              )}
 
               {filteredRequests.length === 0 && (
                 <div className="card text-center py-12">
@@ -1014,6 +1045,42 @@ export default function AdminClientDashboard({ client, onBack, onRefresh }) {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function NotionTestRow({ label, result, emptyLabel }) {
+  if (!result) {
+    return (
+      <div className="flex items-center gap-2 text-gray-400">
+        <span>—</span>
+        <span className="font-medium">{label}:</span>
+        <span>{emptyLabel || 'not tested'}</span>
+      </div>
+    )
+  }
+  if (result.valid) {
+    return (
+      <div className="flex items-start gap-2 text-green-700">
+        <span>✓</span>
+        <div>
+          <span className="font-medium">{label}:</span>{' '}
+          <span>{result.name || 'OK'}</span>
+          {result.missingProperties?.length > 0 && (
+            <div className="text-amber-700 text-xs mt-1">⚠️ Missing columns: {result.missingProperties.join(', ')}</div>
+          )}
+        </div>
+      </div>
+    )
+  }
+  return (
+    <div className="flex items-start gap-2 text-red-600">
+      <span>✗</span>
+      <div>
+        <span className="font-medium">{label}:</span>{' '}
+        <span>{result.error || 'Failed'}</span>
+        {result.hint && <div className="text-xs mt-1">{result.hint}</div>}
+      </div>
     </div>
   )
 }

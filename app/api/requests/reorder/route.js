@@ -1,12 +1,33 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
 
-// POST /api/requests/reorder - Reorder queue priorities
+// POST /api/requests/reorder - Reorder queue priorities.
+// Accepts either:
+//   { clientId, orderedIds: [id1, id2, ...] } — full reorder (drag-and-drop)
+//   { clientId, requestId, direction: 'up'|'down' } — single step (legacy)
 export async function POST(request) {
   try {
     const supabase = createServerSupabaseClient()
-    const { clientId, requestId, direction } = await request.json()
-    
+    const body = await request.json()
+    const { clientId, requestId, direction, orderedIds } = body
+
+    // Full reorder mode
+    if (clientId && Array.isArray(orderedIds)) {
+      // Assign priorities 1..N in the given order
+      const updates = orderedIds.map((id, i) =>
+        supabase
+          .from('requests')
+          .update({ priority: i + 1 })
+          .eq('id', id)
+          .eq('client_id', clientId)
+          .eq('status', 'in-queue')
+      )
+      const results = await Promise.all(updates)
+      const firstError = results.find(r => r.error)?.error
+      if (firstError) throw firstError
+      return NextResponse.json({ success: true, count: orderedIds.length })
+    }
+
     if (!clientId || !requestId || !direction) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
