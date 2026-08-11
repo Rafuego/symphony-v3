@@ -130,12 +130,20 @@ export default function RequestTableRow({
                 className="w-full text-sm font-medium text-gray-900 border border-[#8B7355] rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#8B7355]/30"
               />
             ) : (
-              <div
-                className="text-sm font-medium text-gray-900 truncate hover:bg-gray-100 rounded px-1 -mx-1 cursor-text"
-                onClick={(e) => { e.stopPropagation(); setTitleEditing(true) }}
-                title="Click to edit title"
-              >
-                {request.title}
+              <div className="group/title flex items-center gap-1.5">
+                <span
+                  className="text-sm font-medium text-gray-900 truncate hover:bg-gray-100 rounded px-1 -mx-1 cursor-text"
+                  onClick={(e) => { e.stopPropagation(); setTitleEditing(true) }}
+                  title="Click to edit title"
+                >
+                  {request.title}
+                </span>
+                <span
+                  className="text-xs text-gray-300 opacity-0 group-hover/title:opacity-100 transition-opacity flex-shrink-0"
+                  aria-hidden="true"
+                >
+                  ✎
+                </span>
               </div>
             )}
             {request.description && !titleEditing && (

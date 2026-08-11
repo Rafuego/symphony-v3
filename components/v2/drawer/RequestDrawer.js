@@ -26,6 +26,32 @@ export default function RequestDrawer({ request, role, client, onClose, onStatus
   const [linkDraft, setLinkDraft] = useState('')
   const [showDelete, setShowDelete] = useState(false)
 
+  // Inline title editing
+  const [titleEditing, setTitleEditing] = useState(false)
+  const [titleDraft, setTitleDraft] = useState(request.title || '')
+  const [titleSaving, setTitleSaving] = useState(false)
+  useEffect(() => { setTitleDraft(request.title || '') }, [request.title])
+
+  const saveTitle = async () => {
+    const trimmed = titleDraft.trim()
+    if (!trimmed || trimmed === request.title) {
+      setTitleDraft(request.title || '')
+      setTitleEditing(false)
+      return
+    }
+    setTitleSaving(true)
+    try {
+      await patch({ title: trimmed })
+      setTitleEditing(false)
+    } catch (err) {
+      alert('Error saving title: ' + err.message)
+      setTitleDraft(request.title || '')
+      setTitleEditing(false)
+    } finally {
+      setTitleSaving(false)
+    }
+  }
+
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose?.()
     document.addEventListener('keydown', onKey)
@@ -81,7 +107,30 @@ export default function RequestDrawer({ request, role, client, onClose, onStatus
               </button>
             </div>
           </div>
-          <h2 className="font-serif text-2xl text-gray-900 mt-2">{request.title}</h2>
+          {titleEditing ? (
+            <input
+              autoFocus
+              type="text"
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onBlur={saveTitle}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { e.preventDefault(); saveTitle() }
+                if (e.key === 'Escape') { setTitleDraft(request.title || ''); setTitleEditing(false) }
+              }}
+              disabled={titleSaving}
+              className="font-serif text-2xl text-gray-900 mt-2 w-full border border-[#8B7355] rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#8B7355]/30"
+            />
+          ) : (
+            <h2
+              className="font-serif text-2xl text-gray-900 mt-2 cursor-text hover:bg-gray-50 rounded px-2 -mx-2 py-0.5 group inline-flex items-center gap-2"
+              onClick={() => setTitleEditing(true)}
+              title="Click to edit"
+            >
+              <span>{request.title}</span>
+              <span className="text-sm text-gray-300 group-hover:text-gray-500 transition-colors">✎</span>
+            </h2>
+          )}
           <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
             <StatusBadge status={request.status} editable={isAdmin} onChange={(next) => onStatusChange?.(request, next)} />
             <span>Submitted {shortDate(request.created_at)}</span>
