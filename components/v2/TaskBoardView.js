@@ -142,8 +142,11 @@ export default function TaskBoardView({ client, role, onBack, onRefresh }) {
             <RequestTable
               requests={visibleRequests}
               role={role}
+              activeTab={tab}
+              clientId={client.id}
               onOpen={openRequest}
               onStatusChange={handleStatusChange}
+              onRefresh={onRefresh}
               emptyTitle={search ? 'No matching requests' : 'No requests yet'}
             />
             <LoadMore
