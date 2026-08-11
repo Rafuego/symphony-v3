@@ -9,7 +9,7 @@ export async function POST(request) {
     const supabase = createServerSupabaseClient()
     const body = await request.json()
     
-    const { clientId, title, description, requestType, links, attachments, requestedDueDate } = body
+    const { clientId, title, description, requestType, links, attachments, requestedDueDate, priorityLabel } = body
     
     if (!clientId || !title) {
       return NextResponse.json({ error: 'Client ID and title are required' }, { status: 400 })
@@ -62,7 +62,8 @@ export async function POST(request) {
         status: initialStatus,
         started_at: startedAt,
         priority: nextPriority,
-        requested_due_date: requestedDueDate || null
+        requested_due_date: requestedDueDate || null,
+        priority_label: priorityLabel || null
       })
       .select()
       .single()

@@ -65,6 +65,7 @@ export async function PATCH(request, { params }) {
     if (body.attachments !== undefined) updates.attachments = body.attachments
     if (body.deliverables !== undefined) updates.deliverables = body.deliverables
     if (body.requestedDueDate !== undefined) updates.requested_due_date = body.requestedDueDate || null
+    if (body.priorityLabel !== undefined) updates.priority_label = body.priorityLabel || null
 
     // Assignment (designer) — denormalized snapshot
     if (body.assigneeName !== undefined) updates.assignee_name = body.assigneeName || null
