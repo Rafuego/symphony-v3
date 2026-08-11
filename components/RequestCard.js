@@ -5,14 +5,15 @@ import { statusConfig, requestTypes } from '@/lib/supabase'
 import { uploadFile } from '@/lib/uploadFile'
 import { renderMarkdown } from '@/lib/utils'
 
-export default function RequestCard({ 
-  request, 
-  isAdmin, 
-  showPriorityControls, 
+export default function RequestCard({
+  request,
+  isAdmin,
+  showPriorityControls,
+  showPriorityBadge,
   queuePosition,
   totalQueued,
   clientId,
-  onRefresh 
+  onRefresh
 }) {
   const [showAddFile, setShowAddFile] = useState(false)
   const [newFile, setNewFile] = useState({ name: '', url: '', type: 'figma' })
@@ -20,6 +21,41 @@ export default function RequestCard({
   const [notes, setNotes] = useState(request.admin_notes || '')
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false)
+  // Inline title editing
+  const [titleEditing, setTitleEditing] = useState(false)
+  const [titleDraft, setTitleDraft] = useState(request.title || '')
+  const [titleSaving, setTitleSaving] = useState(false)
+
+  const handleTitleSave = async () => {
+    const trimmed = titleDraft.trim()
+    if (!trimmed || trimmed === request.title) {
+      setTitleEditing(false)
+      setTitleDraft(request.title || '')
+      return
+    }
+    setTitleSaving(true)
+    try {
+      const res = await fetch(`/api/requests/${request.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: trimmed }),
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setTitleEditing(false)
+      onRefresh()
+    } catch (err) {
+      alert('Error saving title: ' + err.message)
+      setTitleDraft(request.title || '')
+      setTitleEditing(false)
+    } finally {
+      setTitleSaving(false)
+    }
+  }
+
+  useEffect(() => {
+    setTitleDraft(request.title || '')
+  }, [request.title])
   const [editData, setEditData] = useState({
     title: request.title || '',
     description: request.description || '',
@@ -428,40 +464,52 @@ export default function RequestCard({
     <div className={`card ${showPriorityControls && isFirstInQueue ? 'ring-2 ring-[#8B7355]' : ''}`}>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
         <div className="flex gap-4 flex-1 min-w-0">
-          {/* Priority Controls */}
+          {/* Drag handle (queue tab only) */}
           {showPriorityControls && (
-            <div className="flex flex-col items-center gap-1 pr-4 border-r border-gray-200">
-              <span className="text-xs text-gray-500 font-medium mb-1">#{queuePosition}</span>
-              <button
-                onClick={() => handlePriorityMove('up')}
-                disabled={isFirstInQueue}
-                className={`w-7 h-7 flex items-center justify-center border rounded ${
-                  isFirstInQueue ? 'bg-gray-50 text-gray-300 cursor-not-allowed' : 'bg-white text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                ↑
-              </button>
-              <button
-                onClick={() => handlePriorityMove('down')}
-                disabled={isLastInQueue}
-                className={`w-7 h-7 flex items-center justify-center border rounded ${
-                  isLastInQueue ? 'bg-gray-50 text-gray-300 cursor-not-allowed' : 'bg-white text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                ↓
-              </button>
+            <div
+              className="flex flex-col items-center justify-center pr-3 border-r border-gray-200 cursor-grab active:cursor-grabbing select-none text-gray-400 hover:text-gray-600"
+              title="Drag to reorder"
+            >
+              <span className="text-lg leading-none">⋮⋮</span>
             </div>
           )}
 
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
+              {(showPriorityBadge && queuePosition) && (
+                <span className="px-2 py-0.5 bg-[#8B7355]/10 text-[#8B7355] text-xs font-semibold rounded">
+                  #{queuePosition}
+                </span>
+              )}
               {request.request_type && (
                 <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded">
                   {requestTypes.find(t => t.id === request.request_type)?.emoji}{' '}
                   {requestTypes.find(t => t.id === request.request_type)?.label || request.request_type}
                 </span>
               )}
-              <h3 className="font-serif text-lg text-gray-900">{request.title}</h3>
+              {titleEditing ? (
+                <input
+                  autoFocus
+                  type="text"
+                  value={titleDraft}
+                  onChange={(e) => setTitleDraft(e.target.value)}
+                  onBlur={handleTitleSave}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); handleTitleSave() }
+                    if (e.key === 'Escape') { setTitleDraft(request.title || ''); setTitleEditing(false) }
+                  }}
+                  disabled={titleSaving}
+                  className="font-serif text-lg text-gray-900 border border-[#8B7355] rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-[#8B7355]/30 min-w-[200px] flex-1"
+                />
+              ) : (
+                <h3
+                  className="font-serif text-lg text-gray-900 cursor-text hover:bg-gray-50 rounded px-1 -mx-1"
+                  onClick={() => setTitleEditing(true)}
+                  title="Click to edit title"
+                >
+                  {request.title}
+                </h3>
+              )}
               {showPriorityControls && isFirstInQueue && (
                 <span className="px-2 py-0.5 bg-[#8B7355] text-white text-xs font-semibold uppercase rounded">
                   Up Next
