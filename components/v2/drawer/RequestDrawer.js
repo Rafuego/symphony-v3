@@ -97,11 +97,9 @@ export default function RequestDrawer({ request, role, client, onClose, onStatus
           <div className="flex items-start justify-between gap-3">
             <TypeBadge type={request.request_type} />
             <div className="flex items-center gap-3 text-gray-400">
-              {isAdmin && (
-                <button onClick={() => setShowDelete(true)} className="hover:text-red-600" title="Delete request">
-                  🗑
-                </button>
-              )}
+              <button onClick={() => setShowDelete(true)} className="hover:text-red-600" title="Delete request">
+                🗑
+              </button>
               <button onClick={onClose} className="hover:text-gray-700 text-xl leading-none" aria-label="Close">
                 ×
               </button>

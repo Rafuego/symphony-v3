@@ -31,6 +31,12 @@ export function useRequestFilters(requests) {
     }
 
     list.sort((a, b) => {
+      // Completed items always sink to the bottom, regardless of sort mode,
+      // so recent completions don't push in-progress work down.
+      const aDone = a.status === 'completed' ? 1 : 0
+      const bDone = b.status === 'completed' ? 1 : 0
+      if (aDone !== bDone) return aDone - bDone
+
       if (sort === 'oldest') return new Date(a.created_at) - new Date(b.created_at)
       if (sort === 'due') {
         const da = a.requested_due_date ? new Date(a.requested_due_date).getTime() : Infinity
