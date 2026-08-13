@@ -11,6 +11,8 @@ import UpdateComposer from '@/components/v2/drawer/UpdateComposer'
 import DeleteRequestModal from '@/components/v2/modals/DeleteRequestModal'
 import { useRequestUpdates } from '@/components/v2/hooks/useRequestUpdates'
 import { shortDate, timeAgo } from '@/components/v2/lib/dateUtils'
+import IconButton from '@/components/v2/primitives/IconButton'
+import { TrashIcon, CloseIcon, PencilIcon, PlusIcon } from '@/components/v2/primitives/icons'
 
 // Request detail drawer with the full Updates feed, composer, inline brief/link/file
 // editing, and (admin) delete.
@@ -96,13 +98,9 @@ export default function RequestDrawer({ request, role, client, onClose, onStatus
         <div className="px-6 pt-5 pb-4 border-b border-gray-100 flex-shrink-0">
           <div className="flex items-start justify-between gap-3">
             <TypeBadge type={request.request_type} />
-            <div className="flex items-center gap-3 text-gray-400">
-              <button onClick={() => setShowDelete(true)} className="hover:text-red-600" title="Delete request">
-                🗑
-              </button>
-              <button onClick={onClose} className="hover:text-gray-700 text-xl leading-none" aria-label="Close">
-                ×
-              </button>
+            <div className="flex items-center gap-2">
+              <IconButton icon={TrashIcon} label="Delete request" variant="destructive" onClick={() => setShowDelete(true)} />
+              <IconButton icon={CloseIcon} label="Close" onClick={onClose} />
             </div>
           </div>
           {titleEditing ? (
@@ -126,7 +124,9 @@ export default function RequestDrawer({ request, role, client, onClose, onStatus
               title="Click to edit"
             >
               <span>{request.title}</span>
-              <span className="text-sm text-gray-300 group-hover:text-gray-500 transition-colors">✎</span>
+              <span className="text-gray-300 group-hover:text-gray-500 transition-colors">
+                <PencilIcon size={14} />
+              </span>
             </h2>
           )}
           <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
@@ -150,9 +150,12 @@ export default function RequestDrawer({ request, role, client, onClose, onStatus
           <section>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-semibold text-gray-900">Brief links</h3>
-              <button onClick={() => setShowLinkInput((s) => !s)} className="text-gray-400 hover:text-gray-700" title="Add link">
-                ✎
-              </button>
+              <IconButton
+                icon={PlusIcon}
+                label={showLinkInput ? 'Cancel' : 'Add link'}
+                size="sm"
+                onClick={() => setShowLinkInput((s) => !s)}
+              />
             </div>
             <LinkList links={links} editable onRemove={(i) => patch({ links: links.filter((_, idx) => idx !== i) })} />
             {showLinkInput && (

@@ -2,6 +2,8 @@
 
 import EmptyState from '@/components/v2/primitives/EmptyState'
 import { ClientPlanBadge, ClientStatusBadge, NotionStatus, clientMRR } from '@/components/v2/admin/clientBadges'
+import IconButton from '@/components/v2/primitives/IconButton'
+import { LinkIcon, PencilIcon, ArrowRightIcon } from '@/components/v2/primitives/icons'
 
 const COLUMNS = ['Client', 'Plan', 'Status', 'MRR', 'Active', 'Queued', 'Notion', '', '']
 
@@ -52,13 +54,15 @@ export default function ClientTable({ clients, onOpen, onEdit, onCopyLink, empty
                 <td className="px-4 py-3 text-sm text-gray-500">{client.queuedCount ?? 0}</td>
                 <td className="px-4 py-3"><NotionStatus client={client} /></td>
                 <td className="px-4 py-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center gap-2 justify-end text-gray-400">
-                    <button onClick={() => onCopyLink?.(client)} className="hover:text-gray-700" title="Copy portal link">🔗</button>
-                    <button onClick={() => onEdit?.(client)} className="hover:text-gray-700" title="Edit client">✎</button>
+                  <div className="flex items-center gap-2 justify-end">
+                    <IconButton icon={LinkIcon} label="Copy portal link" size="sm" onClick={() => onCopyLink?.(client)} />
+                    <IconButton icon={PencilIcon} label="Edit client" size="sm" onClick={() => onEdit?.(client)} />
                   </div>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <span className="text-gray-300 group-hover:text-gray-600" aria-hidden="true">→</span>
+                  <span className="inline-flex items-center justify-center text-gray-300 group-hover:text-gray-600" aria-hidden="true">
+                    <ArrowRightIcon size={16} />
+                  </span>
                 </td>
               </tr>
             )

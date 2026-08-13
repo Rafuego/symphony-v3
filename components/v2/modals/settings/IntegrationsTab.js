@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import IconButton from '@/components/v2/primitives/IconButton'
+import { PencilIcon } from '@/components/v2/primitives/icons'
 
 // Integrations tab (admin only) — Notion IDs. Read mode with a pencil to edit,
 // mirroring the existing inline Notion panel in AdminClientDashboard.
@@ -71,9 +73,7 @@ export default function IntegrationsTab({ client, onRefresh }) {
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-900">Notion</h3>
         {!editing && (
-          <button onClick={() => setEditing(true)} className="text-gray-400 hover:text-gray-700" title="Edit">
-            ✎
-          </button>
+          <IconButton icon={PencilIcon} label="Edit" size="sm" onClick={() => setEditing(true)} />
         )}
       </div>
 

@@ -7,6 +7,8 @@ import {
   formatUploadedDate,
   isImageFile,
 } from '@/components/v2/lib/fileAdapter'
+import IconButton from '@/components/v2/primitives/IconButton'
+import { DownloadIcon, RefreshIcon, TrashIcon } from '@/components/v2/primitives/icons'
 
 // File rows with metadata (size · uploaded date · by) and per-row actions
 // (download / replace / delete). Actions are shown only when `editable`.
@@ -54,37 +56,19 @@ export default function FileList({
               <div className="text-sm text-gray-800 truncate">{file.name}</div>
               {meta && <div className="text-xs text-gray-400 truncate">{meta}</div>}
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0 text-gray-400">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {file.url && (
-                <a
-                  href={file.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  download
-                  className="hover:text-gray-700 transition-colors"
-                  title="Download"
-                >
-                  ⤓
-                </a>
+                <IconButton
+                  icon={DownloadIcon}
+                  label="Download"
+                  size="sm"
+                  onClick={() => window.open(file.url, '_blank', 'noopener,noreferrer')}
+                />
               )}
               {editable && (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => triggerReplace(i)}
-                    className="hover:text-gray-700 transition-colors"
-                    title="Replace"
-                  >
-                    ↻
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onRemove?.(i)}
-                    className="hover:text-red-600 transition-colors"
-                    title="Delete"
-                  >
-                    🗑
-                  </button>
+                  <IconButton icon={RefreshIcon} label="Replace" size="sm" onClick={() => triggerReplace(i)} />
+                  <IconButton icon={TrashIcon} label="Delete" variant="destructive" size="sm" onClick={() => onRemove?.(i)} />
                 </>
               )}
             </div>

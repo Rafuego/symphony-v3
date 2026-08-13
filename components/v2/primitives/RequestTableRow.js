@@ -1,10 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import TypeBadge from '@/components/v2/primitives/TypeBadge'
 import StatusBadge from '@/components/v2/primitives/StatusBadge'
 import PriorityLabelPicker from '@/components/v2/primitives/PriorityLabelPicker'
 import { shortDate, timeAgo } from '@/components/v2/lib/dateUtils'
+import { GripIcon, PencilIcon, ArrowRightIcon, TrashIcon } from '@/components/v2/primitives/icons'
+import IconButton from '@/components/v2/primitives/IconButton'
+import DeleteRequestModal from '@/components/v2/modals/DeleteRequestModal'
 
 // One request row in the task-board table. Clicking the row (or the → cell) opens
 // the detail drawer. Status, title and priority are inline-editable.
@@ -30,6 +34,7 @@ export default function RequestTableRow({
   const [titleEditing, setTitleEditing] = useState(false)
   const [titleDraft, setTitleDraft] = useState(request.title || '')
   const [titleSaving, setTitleSaving] = useState(false)
+  const [showDelete, setShowDelete] = useState(false)
 
   useEffect(() => {
     setTitleDraft(request.title || '')
@@ -96,10 +101,10 @@ export default function RequestTableRow({
       <td className="pl-2 pr-0 py-3 align-middle w-6" onClick={(e) => e.stopPropagation()}>
         {draggable ? (
           <span
-            className="text-gray-300 hover:text-gray-600 cursor-grab active:cursor-grabbing select-none"
+            className="inline-flex items-center justify-center w-6 h-6 text-gray-300 hover:text-gray-700 hover:bg-gray-100 rounded cursor-grab active:cursor-grabbing select-none"
             title="Drag to reorder"
           >
-            ⋮⋮
+            <GripIcon size={14} />
           </span>
         ) : null}
       </td>
@@ -139,10 +144,10 @@ export default function RequestTableRow({
                   {request.title}
                 </span>
                 <span
-                  className="text-xs text-gray-300 opacity-0 group-hover/title:opacity-100 transition-opacity flex-shrink-0"
+                  className="text-gray-300 opacity-0 group-hover/title:opacity-100 transition-opacity flex-shrink-0"
                   aria-hidden="true"
                 >
-                  ✎
+                  <PencilIcon size={12} />
                 </span>
               </div>
             )}
@@ -192,10 +197,39 @@ export default function RequestTableRow({
         {timeAgo(request.updated_at || request.created_at)}
       </td>
 
-      {/* Arrow */}
-      <td className="px-4 py-3 align-middle text-right">
-        <span className="text-gray-300 group-hover:text-gray-600 transition-colors" aria-hidden="true">→</span>
+      {/* Actions (delete on hover) + open arrow */}
+      <td className="px-4 py-3 align-middle text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+        <div className="inline-flex items-center gap-2 justify-end">
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+            <IconButton
+              icon={TrashIcon}
+              label="Delete request"
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowDelete(true)}
+            />
+          </span>
+          <span
+            className="inline-flex items-center justify-center text-gray-300 group-hover:text-gray-600 transition-colors cursor-pointer"
+            onClick={() => onOpen?.(request)}
+            aria-hidden="true"
+          >
+            <ArrowRightIcon size={16} />
+          </span>
+        </div>
       </td>
+      {typeof document !== 'undefined' && createPortal(
+        <DeleteRequestModal
+          open={showDelete}
+          request={request}
+          onClose={() => setShowDelete(false)}
+          onDeleted={() => {
+            setShowDelete(false)
+            onRefresh?.()
+          }}
+        />,
+        document.body,
+      )}
     </tr>
   )
 }

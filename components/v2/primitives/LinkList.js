@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import IconButton from '@/components/v2/primitives/IconButton'
+import { CopyIcon, CheckIcon, CloseIcon } from '@/components/v2/primitives/icons'
 
 function hostname(url) {
   try {
@@ -64,23 +66,22 @@ export default function LinkList({ links = [], editable = false, onRemove, empty
               {hostname(url)}
               <span className="text-gray-400"> · {url.replace(/^https?:\/\//, '')}</span>
             </a>
-            <button
-              type="button"
+            <IconButton
+              icon={copied === i ? CheckIcon : CopyIcon}
+              label={copied === i ? 'Copied' : 'Copy link'}
+              size="sm"
               onClick={() => copy(url, i)}
-              className="flex-shrink-0 text-gray-400 hover:text-gray-700 transition-colors"
-              title="Copy link"
-            >
-              {copied === i ? '✓' : '⧉'}
-            </button>
+              className="flex-shrink-0"
+            />
             {editable && (
-              <button
-                type="button"
+              <IconButton
+                icon={CloseIcon}
+                label="Remove link"
+                variant="destructive"
+                size="sm"
                 onClick={() => onRemove?.(i)}
-                className="flex-shrink-0 text-red-400 hover:text-red-600 transition-colors"
-                title="Remove link"
-              >
-                ×
-              </button>
+                className="flex-shrink-0"
+              />
             )}
           </div>
         )
