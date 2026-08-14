@@ -3,14 +3,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import AlertsPanel from '@/components/AlertsPanel'
 import Tabs from '@/components/v2/primitives/Tabs'
-import LoadMore from '@/components/v2/primitives/LoadMore'
 import ClientTable from '@/components/v2/admin/ClientTable'
 import ClientGrid from '@/components/v2/admin/ClientGrid'
 import PendingTab from '@/components/v2/admin/PendingTab'
 import ClientModal from '@/components/v2/modals/ClientModal'
 import { clientMRR } from '@/components/v2/admin/clientBadges'
-
-const PAGE_SIZE = 12
 
 // v2 admin client list (Section 3). Paused clients are merged into the table with a
 // status badge and excluded from MRR. Section-4 sort/filter/inline-edit is deferred.
@@ -19,7 +16,6 @@ export default function AdminClientListV2({ clients, onSelectClient, onRefresh }
   const [view, setView] = useState('table') // table | grid
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState('name') // name | mrr
-  const [visible, setVisible] = useState(PAGE_SIZE)
   const [showCreate, setShowCreate] = useState(false)
   const [editClient, setEditClient] = useState(null)
   const [unreadCount, setUnreadCount] = useState(0)
@@ -43,8 +39,6 @@ export default function AdminClientListV2({ clients, onSelectClient, onRefresh }
     list.sort((a, b) => (sort === 'mrr' ? clientMRR(b) - clientMRR(a) : (a.name || '').localeCompare(b.name || '')))
     return list
   }, [clients, tab, search, sort])
-
-  const visibleClients = filtered.slice(0, visible)
 
   const copyLink = (client) => {
     const url = `${window.location.origin}/portal/${client.access_token}`
@@ -110,7 +104,7 @@ export default function AdminClientListV2({ clients, onSelectClient, onRefresh }
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <Tabs tabs={tabs} active={tab} onChange={(id) => { setTab(id); setVisible(PAGE_SIZE) }} />
+          <Tabs tabs={tabs} active={tab} onChange={setTab} />
           {isClientList && (
             <div className="flex items-center gap-2">
               <input
@@ -130,11 +124,10 @@ export default function AdminClientListV2({ clients, onSelectClient, onRefresh }
         {isClientList && (
           <>
             {view === 'table' ? (
-              <ClientTable clients={visibleClients} onOpen={onSelectClient} onEdit={setEditClient} onCopyLink={copyLink} emptyTitle={emptyTitle} />
+              <ClientTable clients={filtered} onOpen={onSelectClient} onEdit={setEditClient} onCopyLink={copyLink} emptyTitle={emptyTitle} />
             ) : (
-              <ClientGrid clients={visibleClients} onOpen={onSelectClient} onCopyLink={copyLink} emptyTitle={emptyTitle} />
+              <ClientGrid clients={filtered} onOpen={onSelectClient} onCopyLink={copyLink} emptyTitle={emptyTitle} />
             )}
-            <LoadMore hasMore={filtered.length > visible} remaining={filtered.length - visible} onLoadMore={() => setVisible((v) => v + PAGE_SIZE)} />
           </>
         )}
 
