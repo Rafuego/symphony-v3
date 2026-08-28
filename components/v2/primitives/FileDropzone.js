@@ -18,6 +18,7 @@ export default function FileDropzone({
   const inputRef = useRef(null)
   const [dragOver, setDragOver] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [progress, setProgress] = useState({ done: 0, total: 0 })
   const [error, setError] = useState(null)
 
   const handleFiles = async (fileList) => {
@@ -25,17 +26,30 @@ export default function FileDropzone({
     if (files.length === 0) return
     setError(null)
     setUploading(true)
+    setProgress({ done: 0, total: files.length })
     try {
-      const uploaded = []
-      for (const file of files) {
-        const data = await uploadFile(file, clientId)
-        uploaded.push(normalizeFile({ ...data, addedAt: new Date().toISOString() }))
+      // Upload in parallel so 5 files don't take 5× the time. Individual
+      // failures don't block the rest — they surface in the error line.
+      const results = await Promise.allSettled(
+        files.map((file) =>
+          uploadFile(file, clientId).then((data) => {
+            setProgress((p) => ({ ...p, done: p.done + 1 }))
+            return normalizeFile({ ...data, addedAt: new Date().toISOString() })
+          })
+        )
+      )
+      const uploaded = results.filter((r) => r.status === 'fulfilled').map((r) => r.value)
+      const failed = results.filter((r) => r.status === 'rejected')
+      if (uploaded.length > 0) onUploaded?.(uploaded)
+      if (failed.length > 0) {
+        const first = failed[0].reason?.message || 'Upload failed'
+        setError(failed.length === 1 ? first : `${failed.length} of ${files.length} files failed: ${first}`)
       }
-      onUploaded?.(uploaded)
     } catch (err) {
       setError(err.message || 'Upload failed')
     } finally {
       setUploading(false)
+      setProgress({ done: 0, total: 0 })
       if (inputRef.current) inputRef.current.value = ''
     }
   }
@@ -70,13 +84,27 @@ export default function FileDropzone({
       >
         <span className="text-gray-400 text-lg" aria-hidden="true">⬆</span>
         {uploading ? (
-          <span className="text-sm text-gray-500">Uploading…</span>
+          <>
+            <span className="text-sm text-gray-500">
+              Uploading {progress.done} of {progress.total}…
+            </span>
+            {progress.total > 1 && (
+              <div className="w-40 h-1.5 mt-1 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#8B7355] transition-all"
+                  style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }}
+                />
+              </div>
+            )}
+          </>
         ) : (
           <>
             <span className="text-sm text-gray-600">
-              Drag and drop or <span className="text-[#8B7355] font-medium">choose a file</span> to upload
+              Drag and drop files or <span className="text-[#8B7355] font-medium">choose files</span> to upload
             </span>
-            <span className="text-xs text-gray-400">{acceptHint}</span>
+            <span className="text-xs text-gray-400">
+              {multiple ? 'Select multiple at once · ' : ''}{acceptHint}
+            </span>
           </>
         )}
         <input
