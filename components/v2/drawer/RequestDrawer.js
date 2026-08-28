@@ -34,6 +34,27 @@ export default function RequestDrawer({ request, role, client, onClose, onStatus
   const [titleSaving, setTitleSaving] = useState(false)
   useEffect(() => { setTitleDraft(request.title || '') }, [request.title])
 
+  // Inline due-date editing
+  const [dueEditing, setDueEditing] = useState(false)
+  const [dueDraft, setDueDraft] = useState(request.requested_due_date || '')
+  useEffect(() => { setDueDraft(request.requested_due_date || '') }, [request.requested_due_date])
+
+  const saveDueDate = async (nextValue) => {
+    const normalized = nextValue || null
+    if (normalized === (request.requested_due_date || null)) {
+      setDueEditing(false)
+      return
+    }
+    try {
+      await patch({ requestedDueDate: normalized })
+      setDueEditing(false)
+    } catch (err) {
+      alert('Error saving due date: ' + err.message)
+      setDueDraft(request.requested_due_date || '')
+      setDueEditing(false)
+    }
+  }
+
   const saveTitle = async () => {
     const trimmed = titleDraft.trim()
     if (!trimmed || trimmed === request.title) {
@@ -129,10 +150,22 @@ export default function RequestDrawer({ request, role, client, onClose, onStatus
               </span>
             </h2>
           )}
-          <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+          <div className="flex items-center flex-wrap gap-x-3 gap-y-2 mt-2 text-xs text-gray-500">
             <StatusBadge status={request.status} editable={isAdmin} onChange={(next) => onStatusChange?.(request, next)} />
             <span>Submitted {shortDate(request.created_at)}</span>
-            <span>· Last updated {timeAgo(request.updated_at || request.created_at)}</span>
+            <span className="text-gray-300">·</span>
+            <DueDateField
+              value={request.requested_due_date}
+              editing={dueEditing}
+              draft={dueDraft}
+              onDraftChange={setDueDraft}
+              onStartEdit={() => setDueEditing(true)}
+              onSave={() => saveDueDate(dueDraft)}
+              onClear={() => saveDueDate('')}
+              onCancel={() => { setDueDraft(request.requested_due_date || ''); setDueEditing(false) }}
+            />
+            <span className="text-gray-300">·</span>
+            <span>Last updated {timeAgo(request.updated_at || request.created_at)}</span>
           </div>
         </div>
 
@@ -223,4 +256,51 @@ export default function RequestDrawer({ request, role, client, onClose, onStatus
       />
     </div>
   )
+}
+
+function DueDateField({ value, editing, draft, onDraftChange, onStartEdit, onSave, onClear, onCancel }) {
+  if (editing) {
+    return (
+      <span className="inline-flex items-center gap-1">
+        <input
+          autoFocus
+          type="date"
+          value={draft || ''}
+          onChange={(e) => onDraftChange(e.target.value)}
+          onBlur={onSave}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); onSave() }
+            if (e.key === 'Escape') onCancel()
+          }}
+          className="text-xs border border-[#8B7355] rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-[#8B7355]/30"
+        />
+        {value && (
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); onClear() }}
+            className="text-xs text-gray-400 hover:text-red-600"
+            title="Clear due date"
+          >
+            clear
+          </button>
+        )}
+      </span>
+    )
+  }
+  return (
+    <button
+      type="button"
+      onClick={onStartEdit}
+      className="text-xs text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded px-1.5 py-0.5 border border-transparent hover:border-gray-200"
+      title="Click to set due date"
+    >
+      {value ? `Due ${formatDueDateLabel(value)}` : '+ Due date'}
+    </button>
+  )
+}
+
+function formatDueDateLabel(iso) {
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(-2)}`
 }
