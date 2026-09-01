@@ -36,6 +36,28 @@ export default function RequestTableRow({
   const [titleSaving, setTitleSaving] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
 
+  // Inline due-date editing
+  const [dueEditing, setDueEditing] = useState(false)
+  const [dueDraft, setDueDraft] = useState(request.requested_due_date || '')
+  useEffect(() => { setDueDraft(request.requested_due_date || '') }, [request.requested_due_date])
+
+  const saveDueDate = async (nextValue) => {
+    const normalized = nextValue || null
+    if (normalized === (request.requested_due_date || null)) {
+      setDueEditing(false)
+      return
+    }
+    try {
+      await patchRequest({ requestedDueDate: normalized })
+      setDueEditing(false)
+      onRefresh?.()
+    } catch (err) {
+      alert('Error saving due date: ' + err.message)
+      setDueDraft(request.requested_due_date || '')
+      setDueEditing(false)
+    }
+  }
+
   useEffect(() => {
     setTitleDraft(request.title || '')
   }, [request.title])
@@ -187,9 +209,45 @@ export default function RequestTableRow({
         {shortDate(request.started_at)}
       </td>
 
-      {/* Due date */}
-      <td className="px-4 py-3 align-middle text-sm text-gray-500 whitespace-nowrap">
-        {shortDate(request.requested_due_date)}
+      {/* Due date (click to edit) */}
+      <td className="px-4 py-3 align-middle text-sm text-gray-500 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+        {dueEditing ? (
+          <span className="inline-flex items-center gap-1">
+            <input
+              autoFocus
+              type="date"
+              value={dueDraft || ''}
+              onChange={(e) => setDueDraft(e.target.value)}
+              onBlur={() => saveDueDate(dueDraft)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { e.preventDefault(); saveDueDate(dueDraft) }
+                if (e.key === 'Escape') { setDueDraft(request.requested_due_date || ''); setDueEditing(false) }
+              }}
+              className="text-sm border border-[#8B7355] rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-[#8B7355]/30"
+            />
+            {request.requested_due_date && (
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); saveDueDate('') }}
+                className="text-xs text-gray-400 hover:text-red-600"
+                title="Clear due date"
+              >
+                clear
+              </button>
+            )}
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setDueEditing(true)}
+            className={`inline-flex items-center rounded px-1.5 py-0.5 border border-transparent hover:border-gray-200 hover:bg-gray-50 ${
+              request.requested_due_date ? 'text-gray-700' : 'text-gray-400 hover:text-gray-600'
+            }`}
+            title="Click to set due date"
+          >
+            {request.requested_due_date ? shortDate(request.requested_due_date) : '+ Set'}
+          </button>
+        )}
       </td>
 
       {/* Last update */}
