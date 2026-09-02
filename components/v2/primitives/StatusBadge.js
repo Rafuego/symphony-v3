@@ -2,7 +2,7 @@
 
 import { statusConfig } from '@/lib/supabase'
 
-const STATUS_ORDER = ['in-queue', 'in-progress', 'in-review', 'completed']
+const STATUS_ORDER = ['in-queue', 'in-progress', 'in-review', 'paused', 'completed']
 
 // Status pill. Read-only by default (client view); when `editable` (admin view) it
 // renders an inline dropdown that calls onChange(newStatus).

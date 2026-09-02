@@ -15,6 +15,7 @@ export function useRequestMetrics(requests, maxActive) {
       inQueue: countOf('in-queue'),
       inProgress,
       inReview,
+      paused: countOf('paused'),
       completed: countOf('completed'),
       active,
       maxActive: max,

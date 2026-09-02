@@ -5,6 +5,7 @@ const TAB_TO_STATUS = {
   'in-queue': 'in-queue',
   'in-progress': 'in-progress',
   'in-review': 'in-review',
+  paused: 'paused',
   completed: 'completed',
 }
 

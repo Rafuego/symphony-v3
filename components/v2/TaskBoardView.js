@@ -43,6 +43,7 @@ export default function TaskBoardView({ client, role, onBack, onRefresh }) {
     { id: 'in-queue', label: 'Queue', count: metrics.inQueue },
     { id: 'in-progress', label: 'In Progress', count: metrics.inProgress },
     { id: 'in-review', label: 'In Review', count: metrics.inReview },
+    { id: 'paused', label: 'Paused', count: metrics.paused },
     { id: 'completed', label: 'Completed', count: metrics.completed },
   ]
 
