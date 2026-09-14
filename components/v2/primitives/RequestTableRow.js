@@ -240,12 +240,15 @@ export default function RequestTableRow({
           <button
             type="button"
             onClick={() => setDueEditing(true)}
-            className={`inline-flex items-center rounded px-1.5 py-0.5 border border-transparent hover:border-gray-200 hover:bg-gray-50 ${
+            className={`group inline-flex items-center gap-1 rounded px-1.5 py-0.5 border border-transparent hover:border-gray-200 hover:bg-gray-50 ${
               request.requested_due_date ? 'text-gray-700' : 'text-gray-400 hover:text-gray-600'
             }`}
-            title="Click to set due date"
+            title={request.requested_due_date ? 'Click to change due date' : 'Click to set due date'}
           >
-            {request.requested_due_date ? shortDate(request.requested_due_date) : '+ Set'}
+            <span>{request.requested_due_date ? shortDate(request.requested_due_date) : '+ Set'}</span>
+            <span className="text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">
+              <PencilIcon size={11} />
+            </span>
           </button>
         )}
       </td>

@@ -92,9 +92,15 @@ export async function PATCH(request, { params }) {
       if (body.extensionHours !== undefined || body.extension_hours !== undefined) {
         notionUpdates.extensionHours = body.extensionHours ?? body.extension_hours
       }
-      if (updates.started_at !== undefined) notionUpdates.startedAt = updates.started_at
       if (updates.completed_at !== undefined) notionUpdates.completedAt = updates.completed_at
-      if (updates.requested_due_date !== undefined) notionUpdates.requestedDueDate = updates.requested_due_date
+
+      // Timeline (Notion date range): if either the start or end of the range
+      // changed, send BOTH — using the current row values as fallbacks so we
+      // never reset one half of the range to "today" by accident.
+      if (updates.started_at !== undefined || updates.requested_due_date !== undefined) {
+        notionUpdates.startedAt = updatedRequest.started_at
+        notionUpdates.requestedDueDate = updatedRequest.requested_due_date
+      }
 
       // If title changed, look up client name for "ClientName: Title" format
       if (body.title !== undefined) {

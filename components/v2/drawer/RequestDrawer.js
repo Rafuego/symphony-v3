@@ -291,10 +291,13 @@ function DueDateField({ value, editing, draft, onDraftChange, onStartEdit, onSav
     <button
       type="button"
       onClick={onStartEdit}
-      className="text-xs text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded px-1.5 py-0.5 border border-transparent hover:border-gray-200"
-      title="Click to set due date"
+      className="group inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 rounded px-2 py-0.5 border border-gray-200"
+      title={value ? 'Click to change due date' : 'Click to set due date'}
     >
-      {value ? `Due ${formatDueDateLabel(value)}` : '+ Due date'}
+      <span>{value ? `Due ${formatDueDateLabel(value)}` : '+ Due date'}</span>
+      <span className="text-gray-300 group-hover:text-gray-500 transition-colors">
+        <PencilIcon size={11} />
+      </span>
     </button>
   )
 }
