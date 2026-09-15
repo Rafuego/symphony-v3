@@ -1,8 +1,15 @@
 // Date helpers for the v2 task board.
 
 // "4/29/26" style — matches the Figma table columns. Returns '—' when empty.
+// Handles date-only strings ("YYYY-MM-DD" from a Supabase `date` column) as
+// calendar dates in the user's local timezone. `new Date("2026-09-16")` parses
+// the string as UTC midnight, so West-of-UTC viewers previously saw "9/15".
 export function shortDate(value) {
   if (!value) return '—'
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split('-')
+    return `${parseInt(m, 10)}/${parseInt(d, 10)}/${y.slice(-2)}`
+  }
   const d = new Date(value)
   if (isNaN(d.getTime())) return '—'
   return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(-2)}`

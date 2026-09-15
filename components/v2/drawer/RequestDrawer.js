@@ -261,27 +261,40 @@ export default function RequestDrawer({ request, role, client, onClose, onStatus
 function DueDateField({ value, editing, draft, onDraftChange, onStartEdit, onSave, onClear, onCancel }) {
   if (editing) {
     return (
-      <span className="inline-flex items-center gap-1">
+      <span className="inline-flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded px-1.5 py-1">
         <input
           autoFocus
           type="date"
           value={draft || ''}
           onChange={(e) => onDraftChange(e.target.value)}
-          onBlur={onSave}
           onKeyDown={(e) => {
             if (e.key === 'Enter') { e.preventDefault(); onSave() }
-            if (e.key === 'Escape') onCancel()
+            if (e.key === 'Escape') { e.preventDefault(); onCancel() }
           }}
-          className="text-xs border border-[#8B7355] rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-[#8B7355]/30"
+          className="text-xs border border-gray-200 rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-[#8B7355]/30"
         />
+        <button
+          type="button"
+          onClick={onSave}
+          className="text-xs font-medium text-white bg-[#8B7355] hover:bg-[#7a6449] rounded px-2 py-0.5"
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-xs text-gray-500 hover:text-gray-800 rounded px-2 py-0.5 hover:bg-gray-100"
+        >
+          Cancel
+        </button>
         {value && (
           <button
             type="button"
-            onMouseDown={(e) => { e.preventDefault(); onClear() }}
-            className="text-xs text-gray-400 hover:text-red-600"
+            onClick={onClear}
+            className="text-xs text-gray-400 hover:text-red-600 rounded px-2 py-0.5"
             title="Clear due date"
           >
-            clear
+            Clear
           </button>
         )}
       </span>
@@ -302,8 +315,13 @@ function DueDateField({ value, editing, draft, onDraftChange, onStartEdit, onSav
   )
 }
 
-function formatDueDateLabel(iso) {
-  const d = new Date(iso)
+function formatDueDateLabel(value) {
+  if (!value) return ''
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split('-')
+    return `${parseInt(m, 10)}/${parseInt(d, 10)}/${y.slice(-2)}`
+  }
+  const d = new Date(value)
   if (isNaN(d.getTime())) return ''
   return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(-2)}`
 }

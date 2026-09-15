@@ -212,27 +212,40 @@ export default function RequestTableRow({
       {/* Due date (click to edit) */}
       <td className="px-4 py-3 align-middle text-sm text-gray-500 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
         {dueEditing ? (
-          <span className="inline-flex items-center gap-1">
+          <span className="inline-flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded px-1.5 py-1">
             <input
               autoFocus
               type="date"
               value={dueDraft || ''}
               onChange={(e) => setDueDraft(e.target.value)}
-              onBlur={() => saveDueDate(dueDraft)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') { e.preventDefault(); saveDueDate(dueDraft) }
-                if (e.key === 'Escape') { setDueDraft(request.requested_due_date || ''); setDueEditing(false) }
+                if (e.key === 'Escape') { e.preventDefault(); setDueDraft(request.requested_due_date || ''); setDueEditing(false) }
               }}
-              className="text-sm border border-[#8B7355] rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-[#8B7355]/30"
+              className="text-sm border border-gray-200 rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-[#8B7355]/30"
             />
+            <button
+              type="button"
+              onClick={() => saveDueDate(dueDraft)}
+              className="text-xs font-medium text-white bg-[#8B7355] hover:bg-[#7a6449] rounded px-2 py-0.5"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => { setDueDraft(request.requested_due_date || ''); setDueEditing(false) }}
+              className="text-xs text-gray-500 hover:text-gray-800 rounded px-2 py-0.5 hover:bg-gray-100"
+            >
+              Cancel
+            </button>
             {request.requested_due_date && (
               <button
                 type="button"
-                onMouseDown={(e) => { e.preventDefault(); saveDueDate('') }}
-                className="text-xs text-gray-400 hover:text-red-600"
+                onClick={() => saveDueDate('')}
+                className="text-xs text-gray-400 hover:text-red-600 rounded px-2 py-0.5"
                 title="Clear due date"
               >
-                clear
+                Clear
               </button>
             )}
           </span>
