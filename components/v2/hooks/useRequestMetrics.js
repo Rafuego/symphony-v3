@@ -8,7 +8,9 @@ export function useRequestMetrics(requests, maxActive) {
     const countOf = (status) => list.filter((r) => r.status === status).length
     const inProgress = countOf('in-progress')
     const inReview = countOf('in-review')
-    const active = inProgress + inReview
+    // Only actively-being-worked-on tasks count toward the plan's capacity.
+    // In Review = waiting on the client, so the designer's slot is free.
+    const active = inProgress
     const max = maxActive || 0
     return {
       total: list.length,

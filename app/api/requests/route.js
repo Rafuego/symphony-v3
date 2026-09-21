@@ -25,12 +25,13 @@ export async function POST(request) {
     // Get max active capacity for this client
     const maxActive = client?.custom_max_active || planConfig[client?.plan]?.defaultMaxActive || 1
     
-    // Count current active requests
+    // Count current active requests. Only 'in-progress' holds a capacity
+    // slot — 'in-review' (waiting on client) and 'paused' don't.
     const { count: activeCount } = await supabase
       .from('requests')
       .select('*', { count: 'exact', head: true })
       .eq('client_id', clientId)
-      .in('status', ['in-progress', 'in-review'])
+      .eq('status', 'in-progress')
     
     // Determine if we should auto-promote to in-progress
     const hasCapacity = (activeCount || 0) < maxActive
