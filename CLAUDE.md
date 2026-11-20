@@ -193,6 +193,15 @@ Clients can be marked as "paused" via Settings — they:
 ### Pending Deals
 A separate **Pending** tab tracks deals before they become clients. A "Convert to Client" button creates a real client record from a deal's info.
 
+### Owner Area (`/owner`)
+A private page for the studio owner, not linked from the admin UI. Unlike the admin gate (a browser-side flag), it is enforced on the server:
+- `lib/ownerAuth.js` — passcode check with lockout, signed httpOnly session cookie, `requireOwner()`
+- `app/api/owner/{setup,session,plan}` — every data route calls `requireOwner()` first
+- `owner_settings` and `account_plans` (migration 015) have RLS on with no policies and no anon grants, so only the service role can read them
+- The passcode is set once on first visit (requires the admin password). To reset it, delete the `owner_settings` row.
+
+Keep owner data out of `/api/clients`, Notion, Slack and notifications. New owner-only features should reuse `requireOwner()`.
+
 ### Admin View Modes
 The Clients tab supports three view modes via a toggle:
 - **Detailed** — full info per row (default)
