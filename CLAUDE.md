@@ -38,6 +38,7 @@ symphony-app/
 │       │   ├── route.js                   # GET all, POST new pending deal
 │       │   └── [id]/route.js              # PATCH, DELETE deal
 │       ├── upload/route.js                # POST returns signed Supabase Storage URL
+│       ├── slack/events/route.js          # POST Slack bot events (tag the bot to create a request)
 │       ├── notifications/route.js         # GET unread, PATCH mark read
 │       └── client/verify/route.js         # POST password verification
 ├── components/
@@ -52,6 +53,7 @@ symphony-app/
 │   ├── supabase.js                        # Supabase client + planConfig + statusConfig + requestTypes
 │   ├── utils.js                           # renderMarkdown, getBusinessHoursRemaining (legacy)
 │   ├── slack.js                           # Slack webhook notifications
+│   ├── slackBot.js                        # Slack intake bot: signature check, channel-to-client matching, request text
 │   ├── notion.js                          # Notion API integration (createPage, updatePage, fetchTemplateBlocks)
 │   ├── password.js                        # bcrypt password hashing
 │   └── uploadFile.js                      # Shared client-side helper for direct-to-Supabase uploads
@@ -176,6 +178,26 @@ The status of the Notion page syncs back when the Symphony status changes. The "
 ### Slack Notifications
 Posts a message to the configured webhook when a new request is created.
 
+### Slack Bot (request intake)
+For clients who send requests in Slack instead of the portal. Tag `@Symphony` and the message becomes a request, created through the same `POST /api/requests` code as the portal, so capacity rules, alerts, the Slack notification and the Notion sync all apply.
+
+- **Tag it in a reply under a message**: that first message is the brief. Text after the tag is the title (`@Symphony Homepage hero refresh`); later lines become a note. With no title, the title comes from the message.
+- **Tag it in a new message**: the text after the tag is the request.
+- **`@Symphony deck: Investor update`** sets the type (brand, site, deck, product, marketing, misc). Otherwise the type is guessed from the words.
+- **`@Symphony link <client name>`** connects the channel to a client. Team members only.
+- The bot replies in the thread with the request link. The client's board link is added only in `#interlude-…` channels, never in `#int-…` ones.
+
+How it decides the client: `slack_channels` maps a channel to a client. A channel with no row is connected automatically only when its name (minus `interlude-` / `int-`) is exactly one client's name and nothing else is close; anything less certain asks for `link`. A wrong match would put one client's message on another client's board, so do not loosen this.
+
+Pieces:
+- `app/api/slack/events/route.js`: checks Slack's signature (`SLACK_SIGNING_SECRET`) before anything else, answers Slack straight away and does the work after (`runAfterResponse`). `GET` on the same address reports what is set up.
+- `lib/slackBot.js`: `handleAppMention()` and the text helpers. Briefs are stored as plain text (the drawer does not render markdown).
+- `slack_intake` (migration 016): one row per tagged message. Its primary key is what stops a repeated Slack delivery from creating a second request.
+- `slack/app-manifest.yaml`: the Slack app definition (scopes, events address).
+- Files attached in Slack are not copied; the brief says how many there are and the Slack link is saved in the request's links.
+
+Both tables are server-only (RLS on, no policies), like the owner tables.
+
 ### File Handling (Direct-to-Supabase Uploads)
 1. Browser POSTs filename + clientId to `/api/upload`
 2. Server returns a Supabase signed upload URL
@@ -232,6 +254,10 @@ NEXT_PUBLIC_APP_URL=https://symphony.interlude.studio
 # Optional but recommended
 NOTION_API_KEY=secret_...
 SLACK_WEBHOOK_URL=https://hooks.slack.com/...
+
+# Optional: the Slack intake bot (off until both are set)
+SLACK_SIGNING_SECRET=...
+SLACK_BOT_TOKEN=xoxb-...
 ```
 
 See `.env.example` for the template and setup instructions for Notion / Slack.

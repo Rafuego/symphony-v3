@@ -1,0 +1,32 @@
+# Slack app for the Symphony intake bot.
+#
+# Create the app at https://api.slack.com/apps -> "Create New App" ->
+# "From a manifest", pick the Interlude workspace, and paste this file.
+# Then put the app's Signing Secret and Bot User OAuth Token into Vercel as
+# SLACK_SIGNING_SECRET and SLACK_BOT_TOKEN (see CLAUDE.md, "Slack Bot").
+display_information:
+  name: Symphony
+  description: Tag me on a client's message to add it to their Symphony board.
+  background_color: "#8B7355"
+features:
+  bot_user:
+    display_name: Symphony
+    always_online: true
+oauth_config:
+  scopes:
+    bot:
+      - app_mentions:read   # hear when it is tagged
+      - chat:write          # reply in the thread
+      - channels:history    # read the message it was tagged under (public channels)
+      - groups:history      # same, private channels
+      - channels:read       # read the channel name, to match it to a client
+      - groups:read         # same, private channels
+      - users:read          # show people's names in the brief
+settings:
+  event_subscriptions:
+    request_url: https://symphony.interlude.studio/api/slack/events
+    bot_events:
+      - app_mention
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
