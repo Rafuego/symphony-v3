@@ -93,7 +93,8 @@ export async function POST(request) {
       message: notificationMessage,
       clientName: client?.name || 'Unknown',
       requestType: formatRequestType(requestType || 'misc'),
-      link: `${baseUrl}/admin`
+      // Opens this exact request in the admin view
+      link: `${baseUrl}/admin?client=${clientId}&request=${newRequest.id}`
     })
 
     // Create Notion page — use client-specific DB ID or global default

@@ -12,6 +12,7 @@ import NewRequestModal from '@/components/v2/modals/NewRequestModal'
 import SettingsModal from '@/components/v2/modals/SettingsModal'
 import { useRequestMetrics } from '@/components/v2/hooks/useRequestMetrics'
 import { useRequestFilters } from '@/components/v2/hooks/useRequestFilters'
+import { useUrlParam } from '@/components/v2/hooks/useUrlParam'
 import { resolvePlan } from '@/components/v2/lib/plan'
 
 const PAGE_SIZE = 12
@@ -31,7 +32,9 @@ export default function TaskBoardView({ client, role, onBack, onRefresh }) {
   const [visible, setVisible] = useState(PAGE_SIZE)
   const [showNewRequest, setShowNewRequest] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [selectedId, setSelectedId] = useState(null)
+  // The open request lives in the address bar (?request=<id>), so every request
+  // has its own link in both the admin view and the client portal.
+  const [selectedId, setSelectedId] = useUrlParam('request')
 
   // Derive the open request from the (possibly refreshed) list so drawer edits
   // reflect live after onRefresh re-fetches the client.
@@ -192,7 +195,8 @@ export default function TaskBoardView({ client, role, onBack, onRefresh }) {
           onRefresh={onRefresh}
           onStatusChange={(req, next) => handleStatusChange(req, next)}
           onDeleted={() => {
-            setSelectedId(null)
+            // Replace, so Back cannot land on a request that no longer exists.
+            setSelectedId(null, { replace: true })
             onRefresh?.()
           }}
         />

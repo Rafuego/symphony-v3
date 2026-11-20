@@ -82,9 +82,9 @@ export default function AlertsPanel({ onSelectClient }) {
     if (!notification.read) {
       markAsRead([notification.id])
     }
-    // Navigate to client if available
+    // Open the client, and the request the alert is about when there is one
     if (notification.client_id && onSelectClient) {
-      onSelectClient(notification.client_id)
+      onSelectClient(notification.client_id, notification.request_id || null)
     }
   }
 

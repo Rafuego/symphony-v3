@@ -12,7 +12,7 @@ import DeleteRequestModal from '@/components/v2/modals/DeleteRequestModal'
 import { useRequestUpdates } from '@/components/v2/hooks/useRequestUpdates'
 import { shortDate, timeAgo } from '@/components/v2/lib/dateUtils'
 import IconButton from '@/components/v2/primitives/IconButton'
-import { TrashIcon, CloseIcon, PencilIcon, PlusIcon } from '@/components/v2/primitives/icons'
+import { TrashIcon, CloseIcon, PencilIcon, PlusIcon, LinkIcon, CheckIcon } from '@/components/v2/primitives/icons'
 
 // Request detail drawer with the full Updates feed, composer, inline brief/link/file
 // editing, and (admin) delete.
@@ -27,6 +27,22 @@ export default function RequestDrawer({ request, role, client, onClose, onStatus
   const [showLinkInput, setShowLinkInput] = useState(false)
   const [linkDraft, setLinkDraft] = useState('')
   const [showDelete, setShowDelete] = useState(false)
+
+  // Copy a link to this request. `own` is the page you are on right now
+  // (admin or portal); `client` is the same request in the client's portal.
+  const [copied, setCopied] = useState(null)
+  const copyText = async (text, which) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(which)
+      setTimeout(() => setCopied((c) => (c === which ? null : c)), 1600)
+    } catch {
+      window.prompt('Copy this link', text)
+    }
+  }
+  const copyOwnLink = () => copyText(window.location.href, 'own')
+  const copyClientLink = () =>
+    copyText(`${window.location.origin}/portal/${client.access_token}?request=${request.id}`, 'client')
 
   // Inline title editing
   const [titleEditing, setTitleEditing] = useState(false)
@@ -120,6 +136,11 @@ export default function RequestDrawer({ request, role, client, onClose, onStatus
           <div className="flex items-start justify-between gap-3">
             <TypeBadge type={request.request_type} />
             <div className="flex items-center gap-2">
+              <IconButton
+                icon={copied === 'own' ? CheckIcon : LinkIcon}
+                label={copied === 'own' ? 'Link copied' : 'Copy link to this request'}
+                onClick={copyOwnLink}
+              />
               <IconButton icon={TrashIcon} label="Delete request" variant="destructive" onClick={() => setShowDelete(true)} />
               <IconButton icon={CloseIcon} label="Close" onClick={onClose} />
             </div>
@@ -166,6 +187,19 @@ export default function RequestDrawer({ request, role, client, onClose, onStatus
             />
             <span className="text-gray-300">·</span>
             <span>Last updated {timeAgo(request.updated_at || request.created_at)}</span>
+            {isAdmin && client?.access_token && (
+              <>
+                <span className="text-gray-300">·</span>
+                <button
+                  type="button"
+                  onClick={copyClientLink}
+                  className="text-xs text-[#8B7355] hover:underline"
+                  title="Copy the link that opens this request in the client's portal"
+                >
+                  {copied === 'client' ? 'Client link copied' : 'Copy client link'}
+                </button>
+              </>
+            )}
           </div>
         </div>
 
